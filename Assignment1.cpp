@@ -1,14 +1,26 @@
-///////////////////////////////////////////////////////////////////////////////////////          
-// simplePerson.cpp
-// Author:  Baruch
-//
-// This program draws a person.
-//
-// 
-/////////////////////////////////////////////////////////////////////////////////////// 
+/******************************************
+*
+* Official Name:  Jack Andrew Willis
+*
+* Call me: Jack
+*
+* E-mail:  jwilli59@syr.edu
+*
+* Assignment:  Assignment 1
+*
+* Environment/Compiler:  Visual Studio Community 2022
+*
+* Date submitted:  February 14, 2022
+*
+* References:  simplePerson.cpp, imagecolorpicker.com
+*
+* Interactions:   a spawns the Ancient One
+*                 p activated the portal
+*                 v changes projection mode from ortho to frustum
+*******************************************/
+
 
 #include <cmath>
-  //sin, cos
 #include <iostream>
 
 #ifdef __APPLE__
@@ -24,24 +36,146 @@ using namespace std;
 // Globals.
 static float r = 1.0; // Radius of head.
 static int nv = 10;  //number of vertices for head
-static float cx=20.0, cy=15.0, cz=0.5;  //center of head
-static float bodylength=4.0;
+static float cx=25.0, cy=18.0, cz=0.5;  //center of head
+static float cx2 = 45.0, cy2 = 22.0, cz2 = 0.2;  //center of head
+static float bodylength = 4.0;
+static float bodylength2 = 6.0;
 static bool orthoProj = true;
 static bool portalsActive = false;
+static bool spawnAncientOne = false;
 
+static float vertices[] =
+{
+    70, 20, .5,
+    65, 10, .5,
+    80, 20, .5,
+    75, 10, .5,
+    80, 30, .5,
+    75, 25, .5,
+    70, 30, .5,
+    65, 25, .5,
+    70, 20, .5,
+    65, 10, .5,
+    75, 10, .5
+};
+
+static float colors[] =
+{
+    0.2156862745098039, 0.2431372549019608, 0.2627450980392157,
+    0.2156862745098039, 0.2431372549019608, 0.2627450980392157,
+    0.2156862745098039, 0.2431372549019608, 0.2627450980392157,
+    0.2156862745098039, 0.2431372549019608, 0.2627450980392157,
+    0.2156862745098039, 0.2431372549019608, 0.2627450980392157,
+    0.2156862745098039, 0.2431372549019608, 0.2627450980392157,
+    0.2156862745098039, 0.2431372549019608, 0.2627450980392157,
+    0.7450980392157, 0.7450980392157, 0.7450980392157,
+    0.7450980392157, 0.7450980392157, 0.7450980392157,
+    0.2156862745098039, 0.2431372549019608, 0.2627450980392157,
+    1.2156862745098039, 0.2431372549019608, 0.2627450980392157
+};
+
+void drawCube()
+{
+    glEnable(GL_DEPTH_TEST);
+    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+    glBegin(GL_TRIANGLE_STRIP);
+        for (int i = 0; i < 11; i++) glArrayElement(i);
+    glEnd();
+    glDisable(GL_DEPTH_TEST);
+}
+
+void drawHead2()
+{
+    glEnable(GL_DEPTH_TEST);
+    int j;
+    glBegin(GL_TRIANGLE_FAN);
+    glColor3f(0.0, 0.0, 0.0);
+    glVertex3f(cx2, cy2, cz2);
+    for (j = 0; j <= nv; j++)
+    {
+        glVertex3f(r * cos((float)(j) / nv * 2 * PI) + cx2, r * sin((float)(j) / nv * 2 * PI) + cy2, cz2);
+    }
+    glEnd();
+
+
+    glDisable(GL_DEPTH_TEST);
+
+}
+
+void drawStickBody2()
+{
+    glEnable(GL_DEPTH_TEST);
+    glLineWidth(5.0);
+    glColor3f(0.93, 0.8196078431372549, 0.0156862745098039);
+    glBegin(GL_LINES);
+        glVertex3f(cx2, cy2 - r, cz2);
+        glVertex3f(cx2, cy2 - r - bodylength2, cz2);
+    glEnd();
+    glLineWidth(1.0);
+    glColor3f(0.0, 0.0, 0.0);
+    glDisable(GL_DEPTH_TEST);
+}
+
+void drawStickArms2()
+{
+    glEnable(GL_DEPTH_TEST);
+    glLineWidth(5.0);
+    glColor3f(0.3, 0.3, 1.0);
+    glBegin(GL_LINES);
+        glVertex3f(cx2, cy2 - r - .2 * bodylength2, cz2);
+        glVertex3f(cx2 - 1, cy2 - r - 1.2 * bodylength2, cz2);
+        glVertex3f(cx2, cy2 - r - .2 * bodylength2, cz2);
+        glVertex3f(cx2 + 1, cy2 - r - 1.2 * bodylength2, cz2);
+    glEnd();
+    glLineWidth(1.0);
+    glColor3f(0.0, 0.0, 0.0);
+    glDisable(GL_DEPTH_TEST);
+}
+
+void drawStickArms2Scared()
+{
+    glEnable(GL_DEPTH_TEST);
+    glLineWidth(5.0);
+    glColor3f(0.3, 0.3, 1.0);
+    glBegin(GL_LINES);
+        glVertex3f(cx2, cy2 - r - .2 * bodylength2, cz2);
+        glVertex3f(cx2 - 3, cy2 - r * bodylength2 + 6, cz2);
+        glVertex3f(cx2, cy2 - r - .2 * bodylength2, cz2);
+        glVertex3f(cx2 + 3, cy2 - r * bodylength2 + 6, cz2);
+    glEnd();
+    glLineWidth(1.0);
+    glColor3f(0.0, 0.0, 0.0);
+    glDisable(GL_DEPTH_TEST);
+}
+
+void drawStickLegs2()
+{
+    glEnable(GL_DEPTH_TEST);
+    glLineWidth(5.0);
+    glColor3f(0.3, 0.3, 1.0);
+    glBegin(GL_LINES);
+        glVertex3f(cx2, cy2 - r - bodylength2, cz);
+        glVertex3f(cx2 - 1, cy2 - r - bodylength2 - 6, cz2);
+        glVertex3f(cx2, cy2 - r - bodylength2, cz2);
+        glVertex3f(cx2 + 1, cy2 - r - bodylength2 - 6, cz2);
+    glEnd();
+    glLineWidth(1.0);
+    glColor3f(0.0, 0.0, 0.0);
+    glDisable(GL_DEPTH_TEST);
+}
+
+// From simplePerson.cpp
 void drawHead()
 {
   glEnable(GL_DEPTH_TEST);
+  glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
   int j;
-  //draw circle head with nv vertices, center (cx,cy,xz)
   glBegin(GL_TRIANGLE_FAN);
   glColor3f(0.0, 0.0, 0.0);
   glVertex3f(cx,cy,cz);
   for(j = 0; j <= nv; j++)
   {
-      glVertex3f(r * cos( (float)(j)/nv * 2*PI ) +cx,
-                 r * sin( (float)(j)/nv * 2*PI )+cy,
-                 cz );
+      glVertex3f(r * cos( (float)(j)/nv * 2*PI ) +cx, r * sin( (float)(j)/nv * 2*PI )+cy, cz);
   }
   glEnd();
 
@@ -50,56 +184,55 @@ void drawHead()
   
 }
 
+// From simplePerson.cpp
 void drawStickBody()
 {
   glEnable(GL_DEPTH_TEST);
-  //draw line for body, starting at bottom of head,
-    //of length bodylength
   glLineWidth(5.0);
-  glColor3f(0.0,1.0,0.0);
+  glColor3f(0.9176470588235294, 0.0156862745098039, 0.93);
   glBegin(GL_LINES);
     glVertex3f(cx,cy-r,cz);
     glVertex3f(cx,cy-r-bodylength,cz);
   glEnd();
-  glLineWidth(1.0);  //restore width and color
-  glColor3f(0.0,0.0,0.0);
   glDisable(GL_DEPTH_TEST);
 }
 
+// From simplePerson.cpp
 void drawStickArms()
 {
   glEnable(GL_DEPTH_TEST);
-    //draw 2 arms, attached partly down body, going down,
-    //at slight angle.
   glLineWidth(5.0);
   glColor3f(0.3,0.3,1.0);
   glBegin(GL_LINES);
-    glVertex3f(cx,cy-r-.2*bodylength,cz); //down 20% of body
+    glVertex3f(cx,cy-r-.2*bodylength,cz);
     glVertex3f(cx-1,cy-r-1.2*bodylength ,cz);
-    glVertex3f(cx,cy-r-.2*bodylength,cz); //down 20% of body
+    glVertex3f(cx,cy-r-.2*bodylength,cz);
     glVertex3f(cx+1,cy-r-1.2*bodylength ,cz);
   glEnd();
-  glLineWidth(1.0);  //restore width and color
+  glDisable(GL_DEPTH_TEST);
+}
+
+// From simplePerson.cpp
+void drawStickLegs()
+{
+  glEnable(GL_DEPTH_TEST);
+  glLineWidth(5.0);
+  glColor3f(0.3, 0.3, 1.0);
+  glBegin(GL_LINES);
+    glVertex3f(cx,cy-r-bodylength,cz);
+    glVertex3f(cx-1,cy-r-bodylength-6,cz);
+    glVertex3f(cx,cy-r-bodylength,cz);
+    glVertex3f(cx+1,cy-r-bodylength-6,cz);
+  glEnd();
+  glLineWidth(1.0);
   glColor3f(0.0,0.0,0.0);
   glDisable(GL_DEPTH_TEST);
 }
 
-void drawStickLegs()
+void drawSphere() 
 {
-  glEnable(GL_DEPTH_TEST);
-    //draw 2 legs, attached at bottom of body, going out
-    //at slight angle,
-  glLineWidth(5.0);
-  glColor3f(1.0,0.3,0.7);
-  glBegin(GL_LINES);
-    glVertex3f(cx,cy-r-bodylength,cz); //down at bottom of body
-    glVertex3f(cx-1,cy-r-bodylength-6,cz);
-    glVertex3f(cx,cy-r-bodylength,cz); //down at bottom of body
-    glVertex3f(cx+1,cy-r-bodylength-6,cz);
-  glEnd();
-  glLineWidth(1.0);  //restore width and color
-  glColor3f(0.0,0.0,0.0);
-  glDisable(GL_DEPTH_TEST);
+    glColor3f(1, 1, 0);
+    glutWireSphere(15.0, 10, 8);
 }
 
 
@@ -133,7 +266,7 @@ void drawBackground()
         y2 -= 2;
         z -= .5;
     }
-    //Piller 3
+    //All 10 pillers/rocks in the background are made from polygons
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     glColor3f(0.203921568627451, 0.2156862745098039, 0.2235294117647059);
     glBegin(GL_POLYGON);
@@ -179,7 +312,7 @@ void drawBackground()
         glVertex3f(40.0, 32.0, -35.0);
     glEnd();
 
-    //Piller 2
+   
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     glColor3f(0.203921568627451, 0.2156862745098039, 0.2235294117647059);
     glBegin(GL_POLYGON);
@@ -215,22 +348,25 @@ void drawBackground()
         glVertex3f(95.0, 35.0, 0);
         glVertex3f(100.0, 35.0, 0);
     glEnd();
+
+    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+    glColor3f(0.203921568627451, 0.2156862745098039, 0.2235294117647059);
+    glBegin(GL_POLYGON);
+        glVertex3f(100.0, 100.0, 0);
+        glVertex3f(95.0, 100.0, 0);
+        glVertex3f(95.0, 35.0, 0);
+        glVertex3f(100.0, 35.0, 0);
+    glEnd();
 }
 
 void drawTheAncientOnesHead()
 {
     glEnable(GL_DEPTH_TEST);
-    int j;
-    //draw circle head with nv vertices, center (cx,cy,xz)
-    glBegin(GL_TRIANGLE_FAN);
     glColor3f(0.0, 0.0, 0.0);
-    glVertex3f(cx, cy, cz);
-    for (j = 0; j <= nv; j++)
-    {
-        glVertex3f(r * cos((float)(j) / nv * 2 * PI) + cx,
-            r * sin((float)(j) / nv * 2 * PI) + cy,
-            cz);
-    }
+    glBegin(GL_POLYGON);
+        glVertex3f(50, 42, -25);
+        glVertex3f(54, 42, -25);
+        glVertex3f(52, 46, -25);
     glEnd();
 
 
@@ -241,57 +377,73 @@ void drawTheAncientOnesHead()
 void drawTheAncientOnesBody()
 {
     glEnable(GL_DEPTH_TEST);
-    //draw line for body, starting at bottom of head,
-      //of length bodylength
-    glLineWidth(5.0);
-    glColor3f(0.0, 1.0, 0.0);
-    glBegin(GL_LINES);
-    glVertex3f(cx, cy - r, cz);
-    glVertex3f(cx, cy - r - bodylength, cz);
+    glColor3f(0.93, 0.3058823529411765, 0.0156862745098039);
+    glBegin(GL_POLYGON);
+        glVertex3f(48, 42, -25);
+        glVertex3f(56, 42, -25);
+        glVertex3f(52, 36, -25);
     glEnd();
-    glLineWidth(1.0);  //restore width and color
-    glColor3f(0.0, 0.0, 0.0);
     glDisable(GL_DEPTH_TEST);
 }
 
 void drawTheAncientOnesArms()
 {
     glEnable(GL_DEPTH_TEST);
-    //draw 2 arms, attached partly down body, going down,
-    //at slight angle.
     glLineWidth(5.0);
     glColor3f(0.3, 0.3, 1.0);
     glBegin(GL_LINES);
-    glVertex3f(cx, cy - r - .2 * bodylength, cz); //down 20% of body
-    glVertex3f(cx - 1, cy - r - 1.2 * bodylength, cz);
-    glVertex3f(cx, cy - r - .2 * bodylength, cz); //down 20% of body
-    glVertex3f(cx + 1, cy - r - 1.2 * bodylength, cz);
+        glVertex3f(52, 42, -26); 
+        glVertex3f(45, 39, -26);
+        glVertex3f(52, 40, -26);
+        glVertex3f(59, 42, -26);
+        glVertex3f(59, 42, -26);
+        glVertex3f(61, 45, -26);
     glEnd();
-    glLineWidth(1.0);  //restore width and color
-    glColor3f(0.0, 0.0, 0.0);
+    glLineWidth(1.0);
     glDisable(GL_DEPTH_TEST);
 }
+
+void drawTheAncientOnesArms2()
+{
+    glEnable(GL_DEPTH_TEST);
+    glLineWidth(5.0);
+    glColor3f(0.3, 0.3, 1.0);
+    glBegin(GL_LINES);
+    glVertex3f(52, 42, -26);
+    glVertex3f(45, 39, -26);
+    glVertex3f(52, 40, -26);
+    glVertex3f(59, 42, -26);
+    glVertex3f(59, 42, -26);
+    glVertex3f(59, 45, -26);
+    glEnd();
+    glLineWidth(1.0);
+    glDisable(GL_DEPTH_TEST);
+}
+
 
 void drawTheAncientOnesLegs()
 {
     glEnable(GL_DEPTH_TEST);
-    //draw 2 legs, attached at bottom of body, going out
-    //at slight angle,
     glLineWidth(5.0);
-    glColor3f(1.0, 0.3, 0.7);
+    glColor3f(0.3, 0.3, 1.0);
     glBegin(GL_LINES);
-    glVertex3f(cx, cy - r - bodylength, cz); //down at bottom of body
-    glVertex3f(cx - 1, cy - r - bodylength - 6, cz);
-    glVertex3f(cx, cy - r - bodylength, cz); //down at bottom of body
-    glVertex3f(cx + 1, cy - r - bodylength - 6, cz);
+        glVertex3f(52, 38, -26);
+        glVertex3f(49, 35, -26);
+        glVertex3f(49, 35, -26);
+        glVertex3f(49, 30, -26);
+
+        glVertex3f(52, 38, -26);
+        glVertex3f(55, 35, -26);
+        glVertex3f(55, 35, -26);
+        glVertex3f(55, 30, -26);
     glEnd();
-    glLineWidth(1.0);  //restore width and color
-    glColor3f(0.0, 0.0, 0.0);
+    glLineWidth(1.0);
     glDisable(GL_DEPTH_TEST);
 }
 
 void drawForground()
 {
+    // Polygon used to create the ledge the portal is sitting on
     glEnable(GL_DEPTH_TEST);
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     glColor3f(0.1568627450980392, 0.1725490196078431, 0.1843137254901961);
@@ -302,6 +454,7 @@ void drawForground()
         glVertex3f(0.0, 17.0, 0);
     glEnd();
 
+    // Triangle Strip used for ledge behind hollow cube
     glBegin(GL_TRIANGLE_STRIP);
         glVertex3f(62, 36, 0);
         glVertex3f(62, 15, 0);
@@ -313,6 +466,7 @@ void drawForground()
         glVertex3f(100, 15, 0);
     glEnd();
 
+    // Triangle Fan used for background of portals, for loop references simplePerson.cpp
     glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
     glBegin(GL_TRIANGLE_FAN);
         glColor3f(1.0, 1.0, 1.0);
@@ -323,6 +477,7 @@ void drawForground()
         }
     glEnd();
 
+    // Triangle Fan used for portals, for loop references simplePerson.cpp
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     glBegin(GL_TRIANGLE_FAN);
         if (portalsActive) {
@@ -337,6 +492,24 @@ void drawForground()
             glVertex3f(12 * cos((float)(j) / 50 * 2 * PI) + 20, 12 * sin((float)(j) / 50 * 2 * PI) + 52, -1);
         }
     glEnd();
+
+    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+    glColor3f(0.203921568627451, 0.2156862745098039, 0.2235294117647059);
+    glBegin(GL_POLYGON);
+        glVertex3f(0, 20, .2);
+        glVertex3f(100, 20, .2);
+        glVertex3f(100, 0, .2);
+        glVertex3f(0, 0, .2);
+    glEnd();
+
+    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+    glColor3f(0.203921568627451, 0.2156862745098039, 0.2235294117647059);
+    glBegin(GL_POLYGON);
+        glVertex3f(0, 32, -1);
+        glVertex3f(100, 32, -1);
+        glVertex3f(100, 30, -1);
+        glVertex3f(0, 30, -1);
+        glEnd();
     glDisable(GL_DEPTH_TEST);
 }
 
@@ -349,28 +522,112 @@ void writeBitmapString(void* font, const char* string)
 
 void drawPortalText()
 {
-    
-    glColor3f(0, 0, 0);
-    glRasterPos3f(10.0, 5.0, 0);
-    writeBitmapString(GLUT_BITMAP_8_BY_13, "Portals Activated!");
+    glEnable(GL_DEPTH_TEST);
+    glColor3f(1, 0, 0);
+    glRasterPos3f(3.0, 3.0, .7);
+    writeBitmapString(GLUT_BITMAP_8_BY_13, "Portal Activated!");
+    glDisable(GL_DEPTH_TEST);
 
 }
 
-void printInstructions() {
+void drawAncientOneText()
+{
+    glEnable(GL_DEPTH_TEST);
+    glColor3f(1, 0, 0);
+    glRasterPos3f(3.0, 5.0, .7);
+    writeBitmapString(GLUT_BITMAP_8_BY_13, "Ancient One Awoken!");
+    glDisable(GL_DEPTH_TEST);
+
+}
+
+void printInstructions() 
+{
     cout << "Interaction:" << endl;
     cout << "Press p to activate portal" << endl;
     cout << "Press v to change projection mode" << endl;
     cout << "Press a to summon the Ancient One" << endl;
 }
 
+// Cylinder with triangle strip, modified for loop to draw heads from simplePerson.cpp
+void drawCylinderBody() 
+{
+    glEnable(GL_DEPTH_TEST);
+    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    glColor3f(1, 0, 0);
+    glBegin(GL_TRIANGLE_STRIP);
+        for (int j = 0; j <= 50; j++){
+            if (j % 2 == 0) {
+                glVertex3f(1 * cos((float)(j) / 50 * 2 * PI) + 55, 2 * sin((float)(j) / 50 * 2 * PI) + 25, .8);
+            }
+            else {
+                glVertex3f(1 * cos((float)(j) / 50 * 2 * PI) + 55, 2 * sin((float)(j) / 50 * 2 * PI) + 20, .8);
+            }
+
+        }
+    glEnd();
+}
+
+void drawSquareHead() {
+    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+    glColor3f(0, 0, 0);
+    glBegin(GL_POLYGON);
+        glVertex3f(54, 28, .9);
+        glVertex3f(56, 28, .9);
+        glVertex3f(56, 26, .9);
+        glVertex3f(54, 26, .9);
+    glEnd();
+    glDisable(GL_DEPTH_TEST);
+}
+
+void drawCylinderArms() {
+    glEnable(GL_DEPTH_TEST);
+    glLineWidth(5.0);
+    glColor3f(0, 0, 0);
+    glBegin(GL_LINES);
+      glVertex3f(55, 26, .8);
+      glVertex3f(57, 21, .8);
+      glVertex3f(55, 26, .8);
+      glVertex3f(53, 21, .8);
+   glEnd();
+   glLineWidth(1.0);
+   glDisable(GL_DEPTH_TEST);
+}
+
+void drawCylinderArmsScared() {
+    glEnable(GL_DEPTH_TEST);
+    glLineWidth(5.0);
+    glColor3f(0, 0, 0);
+    glBegin(GL_LINES);
+        glVertex3f(55, 22, .8);
+        glVertex3f(58, 27, .8);
+        glVertex3f(55, 22, .8);
+        glVertex3f(52, 27, .8);
+    glEnd();
+    glLineWidth(1.0);
+    glDisable(GL_DEPTH_TEST);
+}
+
+void drawCylinderLegs() {
+    glEnable(GL_DEPTH_TEST);
+    glLineWidth(5.0);
+    glColor3f(0, 0, 0);
+    glBegin(GL_LINES);
+        glVertex3f(55, 21, .8);
+        glVertex3f(57, 15, .8);
+        glVertex3f(55, 21, .8);
+        glVertex3f(53, 15, .8);
+    glEnd();
+    glLineWidth(1.0);
+    glDisable(GL_DEPTH_TEST);
+}
+
 // Drawing routine.
 void drawScene(void)
 {
   glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-  /*glMatrixMode(GL_MODELVIEW);*/
   glMatrixMode(GL_PROJECTION);
   glLoadIdentity();
-  
+
   if (orthoProj) {
       glOrtho(0.0, 100.0, 0.0, 100.0, -1.0, 50.0);
   }
@@ -382,21 +639,61 @@ void drawScene(void)
       drawPortalText();
   }
 
+  if (spawnAncientOne) {
+      drawHead2();
+      drawStickBody2();
+      drawStickArms2Scared();
+      drawStickLegs2();
+
+      drawAncientOneText();
+      drawTheAncientOnesHead();
+      drawTheAncientOnesBody();
+      drawTheAncientOnesLegs();
+      drawTheAncientOnesArms();
+
+      drawCylinderBody();
+      drawSquareHead();
+      drawCylinderArmsScared();
+      drawCylinderLegs();
+         
+  } else {
+      drawHead2();
+      drawStickBody2();
+      drawStickArms2();
+      drawStickLegs2();
+
+      drawCylinderBody();
+      drawSquareHead();
+      drawCylinderArms();
+      drawCylinderLegs();
+  }
+
+  
+
+  drawCube();
+
   drawHead();
   drawStickBody();
   drawStickArms();
   drawStickLegs();
+
   drawBackground();
   drawForground();
   
   glutSwapBuffers(); //instead of glFlush, double buffer
 }
 
-// Initialization routine.
+
 void setup(void) 
 {
-  //white background
+  //Blue gray background
   glClearColor(0.20784313725490, 0.262745098039215, 0.298039215686274, 0.0);
+
+  glEnableClientState(GL_VERTEX_ARRAY);
+  glEnableClientState(GL_COLOR_ARRAY);
+
+  glVertexPointer(3, GL_FLOAT, 0, vertices);
+  glColorPointer(3, GL_FLOAT, 0, colors);
 }
 
 // OpenGL window reshape routine.
@@ -411,7 +708,7 @@ void resize(int w, int h)
   else {
       glFrustum(0, 100, 0, 100, 1, 50);
   }
-  glMatrixMode(GL_MODELVIEW);
+  /*glMatrixMode(GL_MODELVIEW);*/
 }
 
 // Keyboard input processing routine.
@@ -426,7 +723,6 @@ void keyInput(unsigned char key, int x, int y)
     case 'v':
         if (orthoProj) {
             orthoProj = false;
-            
             glutPostRedisplay();
         }
         else {
@@ -442,9 +738,20 @@ void keyInput(unsigned char key, int x, int y)
         }
         else {
             portalsActive = true;
-            /*drawPortalText();*/
             glutPostRedisplay();
             
+        }
+        break;
+
+    case 'a':
+        if (spawnAncientOne) {
+            spawnAncientOne = false;
+            glutPostRedisplay();
+        }
+        else {
+            spawnAncientOne = true;
+            glutPostRedisplay();
+
         }
         break;
 
