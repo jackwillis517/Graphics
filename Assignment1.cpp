@@ -34,11 +34,15 @@
 using namespace std;
 
 // Globals.
-static float r = 1.0; // Radius of head.
-static int nv = 10;  //number of vertices for head
-static float cx=25.0, cy=18.0, cz=0.5;  //center of head
-static float cx2 = 45.0, cy2 = 22.0, cz2 = 0.2;  //center of head
+
+//  From simplePerson.cpp
+static float r = 1.0; 
+static int nv = 10;
+static float cx=25.0, cy=18.0, cz=0.5;
 static float bodylength = 4.0;
+// **********************************
+
+static float cx2 = 45.0, cy2 = 22.0, cz2 = 0.2;
 static float bodylength2 = 6.0;
 static bool orthoProj = true;
 static bool portalsActive = false;
