@@ -32,11 +32,16 @@
 using namespace std;
 
 // Globals.
+static int controlPanel, skyPanel;
 static int radiobuttonselected = 2;
 static bool firstBoxChecked = false;
 static bool secondBoxChecked = false;
 static bool thirdBoxChecked = false;
 static bool fourthBoxChecked = false;
+static bool spaceStation = false;
+static bool alienShip = false;
+static bool jupiter = false;
+static bool ursaMajor = false;
 
 
 
@@ -391,8 +396,103 @@ void drawFourthCheck()
     glEnd();
 }
 
-// Mouse callback routine.
-void MouseControl(int button, int state, int x, int y)
+float randFloat()
+{
+    return (300 * ((float)rand() / RAND_MAX)) + -150;
+}
+
+void drawStars()
+{
+    for (int i = 0; i < 1500; i++) {
+        float x = (randFloat());
+        float y = (randFloat());
+        glColor3f(1.0, 1.0, 1.0);
+        glBegin(GL_POINTS);
+        glVertex3f(x, y, -48.0);
+        glEnd();
+    }
+}
+
+void drawMoon()
+{
+    glPushMatrix();
+    glColor3f(1.0, 1.0, 1.0);
+    glTranslatef(-4.5, 4.5, -7.0);
+    glRotatef(110, 1.0, 0.0, 0.0);
+    glutSolidSphere(1, 25, 25);
+    glPopMatrix();
+}
+
+void drawDarkMoon()
+{
+    glPushMatrix();
+    glColor3f(0.0078431372549019607843137254902, 0.066666, 0.11764705882352941176470588235294);
+    glTranslatef(-4.5, 4.5, -7.0);
+    glRotatef(110, 1.0, 0.0, 0.0);
+    glutSolidSphere(1, 25, 25);
+    glPopMatrix();
+}
+
+void drawJupiter()
+{
+    glPushMatrix();
+    glColor3f(0.87843137254901960784313725490196, 0.50980392156862745098039215686275, 0.16470588235294117647058823529412);
+    glTranslatef(-45, 18, -47.0);
+    glRotatef(250, 0.0, 0.0, 1.0);
+    glutWireSphere(1, 25, 25);
+    glPopMatrix();
+}
+
+void drawSpaceStation()
+{
+    // Outer torus
+    glPushMatrix();
+    glColor3f(1.0, 1.0, 1.0);
+    glTranslatef(0.0, 0.0, -7.0);
+    glutWireTorus(.25, 2, 25, 25);
+    glPopMatrix();
+
+    // Inner torus
+    glPushMatrix();
+    glColor3f(0.0, 0.0, 1.0);
+    glTranslatef(0.0, 0.0, -7.0);
+    glutWireTorus(.35, .35, 25, 25);
+    glPopMatrix();
+
+    // Three connecting lines
+    glLineWidth(8.0);
+    glBegin(GL_LINES);
+        glColor3f(1.0, 1.0, 1.0);
+        
+        glVertex3f(0.65, -0.25, -7.0);
+        glVertex3f(1.5, -1.0, -7.0);
+
+        glVertex3f(-0.65, -0.25, -7.0);
+        glVertex3f(-1.5, -1.0, -7.0);
+
+        glVertex3f(0.0, 0.65, -7.0);
+        glVertex3f(0.0, 1.72, -7.0);
+    glEnd();
+}
+
+void drawUrsaMajor()
+{
+    glPointSize(4.0);
+    glColor3f(1.0, 1.0, 1.0);
+    glBegin(GL_POINTS);
+        glVertex3f(-2.5, 6.5, -8.0);
+        glVertex3f(-.4, 6.7, -8.0);
+        glVertex3f(1.65, 5.75, -8.0);
+        glVertex3f(3.5, 5.25, -8.0);
+        glVertex3f(3.65, 4.15, -8.0);
+        glVertex3f(6.5, 5.45, -8.0);
+        glVertex3f(6.0, 4.05, -8.0);
+    glEnd();
+    glPointSize(1.0);
+}
+
+// Mouse callback routine for Control Panel.
+void MouseControlPanel(int button, int state, int x, int y)
 {
     int xMouse, yMouse;
     if (button == GLUT_LEFT_BUTTON && state == GLUT_DOWN)
@@ -406,9 +506,11 @@ void MouseControl(int button, int state, int x, int y)
             if (firstBoxChecked)
             {
                 firstBoxChecked = false;
+                spaceStation = false;
             }
             else {
                 firstBoxChecked = true;
+                spaceStation = true;
             }
         }
         if (xMouse >= 25 && xMouse <= 30 && yMouse >= 55 && yMouse <= 60)
@@ -416,9 +518,11 @@ void MouseControl(int button, int state, int x, int y)
             if (secondBoxChecked)
             {
                 secondBoxChecked = false;
+                alienShip = false;
             }
             else {
                 secondBoxChecked = true;
+                alienShip = true;
             }
         }
         if (xMouse >= 25 && xMouse <= 30 && yMouse >= 45 && yMouse <= 50)
@@ -426,9 +530,11 @@ void MouseControl(int button, int state, int x, int y)
             if (thirdBoxChecked)
             {
                 thirdBoxChecked = false;
+                jupiter = false;
             }
             else {
                 thirdBoxChecked = true;
+                jupiter = true;
             }
         }
         if (xMouse >= 25 && xMouse <= 30 && yMouse >= 35 && yMouse <= 40)
@@ -436,9 +542,11 @@ void MouseControl(int button, int state, int x, int y)
             if (fourthBoxChecked)
             {
                 fourthBoxChecked = false;
+                ursaMajor = false;
             }
             else {
                 fourthBoxChecked = true;
+                ursaMajor = true;
             }
         }
 
@@ -449,8 +557,24 @@ void MouseControl(int button, int state, int x, int y)
         if (xMouse >= 60 && xMouse <= 65 && yMouse >= 35 && yMouse <= 40) radiobuttonselected = 4;
         if (xMouse >= 60 && xMouse <= 65 && yMouse >= 25 && yMouse <= 30) radiobuttonselected = 5;
 
+        glutSetWindow(controlPanel);
+        glutPostRedisplay();
+        glutSetWindow(skyPanel);
         glutPostRedisplay();
     }
+}
+
+// Mouse callback routine for Sky Panel.
+void MouseSkyPanel(int button, int state, int x, int y)
+{
+    //int xMouse, yMouse;
+    /*if (button == GLUT_LEFT_BUTTON && state == GLUT_DOWN)
+    {
+        glutSetWindow(controlPanel);
+        glutPostRedisplay();
+        glutSetWindow(skyPanel);
+        glutPostRedisplay();
+    }*/
 }
 
 
@@ -465,8 +589,8 @@ void printInstructions()
 }
 
 
-// Drawing routine.
-void drawScene(void)
+// Drawing routine for Control Panel.
+void drawSceneControlPanel(void)
 {
   glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   glMatrixMode(GL_PROJECTION);
@@ -484,10 +608,46 @@ void drawScene(void)
   glutSwapBuffers(); //instead of glFlush, double buffer
 }
 
-
-void setup(void) 
+// Drawing routine for Sky Panel.
+void drawSceneSkyPanel(void)
 {
-  //Blue gray background
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glMatrixMode(GL_PROJECTION);
+    glEnable(GL_DEPTH_TEST);
+    glLoadIdentity();
+    glFrustum(-5.0, 5.0, -5.0, 5.0, 5.0, 50.0);
+
+    glPushMatrix();
+    // Change angle of rotation to rotate the clipping plane
+    glRotated(0, 0, 1, 0);
+    double rEq[4] = {1, 0, 0, 0 };
+    glClipPlane(GL_CLIP_PLANE0, rEq);
+    glEnable(GL_CLIP_PLANE0);
+    drawDarkMoon();
+    glDisable(GL_CLIP_PLANE0);
+    glPopMatrix();
+
+    drawMoon();
+    drawStars();
+
+    if (spaceStation) {
+        drawSpaceStation();
+    }
+
+    if (jupiter) {
+        drawJupiter();
+    }
+
+    if (ursaMajor) {
+        drawUrsaMajor();
+    }
+
+    glutSwapBuffers(); //instead of glFlush, double buffer
+}
+
+// Setup for Control Panel
+void setupControlPanel(void) 
+{
   glClearColor(1.0, 1.0, 1.0, 1.0);
 
   glEnableClientState(GL_VERTEX_ARRAY);
@@ -495,6 +655,18 @@ void setup(void)
 
   /*glVertexPointer(3, GL_FLOAT, 0, vertices);
   glColorPointer(3, GL_FLOAT, 0, colors);*/
+}
+
+// Setup for Sky Panel
+void setupSkyPanel(void)
+{
+    glClearColor(0.0078431372549019607843137254902, 0.066666, 0.11764705882352941176470588235294, 1.0);
+
+    glEnableClientState(GL_VERTEX_ARRAY);
+    glEnableClientState(GL_COLOR_ARRAY);
+
+    /*glVertexPointer(3, GL_FLOAT, 0, vertices);
+    glColorPointer(3, GL_FLOAT, 0, colors);*/
 }
 
 // OpenGL window reshape routine.
@@ -518,26 +690,41 @@ void keyInput(unsigned char key, int x, int y)
 
     case 'n':
         radiobuttonselected = 1;
+        glutSetWindow(controlPanel);
+        glutPostRedisplay();
+        glutSetWindow(skyPanel);
         glutPostRedisplay();
         break;
 
     case 'c':
         radiobuttonselected = 2;
+        glutSetWindow(controlPanel);
+        glutPostRedisplay();
+        glutSetWindow(skyPanel);
         glutPostRedisplay();
         break;
 
     case 'h':
         radiobuttonselected = 3;
+        glutSetWindow(controlPanel);
+        glutPostRedisplay();
+        glutSetWindow(skyPanel);
         glutPostRedisplay();
         break;
 
     case 'g':
         radiobuttonselected = 4;
+        glutSetWindow(controlPanel);
+        glutPostRedisplay();
+        glutSetWindow(skyPanel);
         glutPostRedisplay();
         break;
 
     case 'f':
         radiobuttonselected = 5;
+        glutSetWindow(controlPanel);
+        glutPostRedisplay();
+        glutSetWindow(skyPanel);
         glutPostRedisplay();
         break;
 
@@ -552,14 +739,27 @@ int main(int argc, char **argv)
   printInstructions();
   glutInit(&argc, argv);
   glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
+  
+  // Control Panel
   glutInitWindowSize(700, 700);
   glutInitWindowPosition(100, 100);
-  glutCreateWindow("Control Panel");
-  setup(); 
-  glutDisplayFunc(drawScene); 
-  glutReshapeFunc(resize);  
+  controlPanel = glutCreateWindow("Control Panel");
+  setupControlPanel();
+  glutDisplayFunc(drawSceneControlPanel);
+  glutMouseFunc(MouseControlPanel);
+
+  // Sky Panel
+  glutInitWindowSize(700, 700);
+  glutInitWindowPosition(900, 100);
+  skyPanel = glutCreateWindow("Sky");
+  setupSkyPanel();
+  glutDisplayFunc(drawSceneSkyPanel);
+  glutMouseFunc(MouseSkyPanel);
+
+  // Both Panels
+  glutReshapeFunc(resize);
   glutKeyboardFunc(keyInput);
-  glutMouseFunc(MouseControl);
+  
   glutMainLoop(); 
   
   return 0;  
