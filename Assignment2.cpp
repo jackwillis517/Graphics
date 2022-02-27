@@ -42,7 +42,9 @@ static bool spaceStation = false;
 static bool alienShip = false;
 static bool jupiter = false;
 static bool ursaMajor = false;
-
+static int moonAngle = -90;
+static int stationAngle = 330;
+static float moonSize = 5.0;
 
 
 //Draws the background of the control panel
@@ -309,7 +311,7 @@ void drawControlPanelText()
 
     // First check box text
     glRasterPos3f(32.0, 67.0, -1.0);
-    writeBitmapString(GLUT_BITMAP_HELVETICA_18, "Space Station");
+    writeBitmapString(GLUT_BITMAP_HELVETICA_18, "Lunar Space Station");
 
     // Second check box text
     glRasterPos3f(32.0, 57.0, -1.0);
@@ -408,7 +410,7 @@ void drawStars()
         float y = (randFloat());
         glColor3f(1.0, 1.0, 1.0);
         glBegin(GL_POINTS);
-        glVertex3f(x, y, -48.0);
+        glVertex3f(x, y, -49.0);
         glEnd();
     }
 }
@@ -416,20 +418,29 @@ void drawStars()
 void drawMoon()
 {
     glPushMatrix();
-    glColor3f(1.0, 1.0, 1.0);
-    glTranslatef(-4.5, 4.5, -7.0);
-    glRotatef(110, 1.0, 0.0, 0.0);
-    glutSolidSphere(1, 25, 25);
-    glPopMatrix();
-}
-
-void drawDarkMoon()
-{
+    glTranslated(0.0, 0.0, -8.0);
     glPushMatrix();
-    glColor3f(0.0078431372549019607843137254902, 0.066666, 0.11764705882352941176470588235294);
-    glTranslatef(-4.5, 4.5, -7.0);
-    glRotatef(110, 1.0, 0.0, 0.0);
+    
+    // Rotate the angle of the clipping plane
+    glRotated(moonAngle, 0.0, 1.0, 0.0);
+
+    // Clip moon to half circle
+    double moonEq[4] = { 1, 0, 0, 0 };
+    glClipPlane(GL_CLIP_PLANE0, moonEq);
+    glEnable(GL_CLIP_PLANE0);
+    glColor3f(1.0, 1.0, 1.0);
     glutSolidSphere(1, 25, 25);
+    glDisable(GL_CLIP_PLANE0);
+
+    // Clip shadow to half circle
+    double shadowEq[4] = { -1, 0, 0, 0 };
+    glClipPlane(GL_CLIP_PLANE0, shadowEq);
+    glEnable(GL_CLIP_PLANE0);
+    glColor3f(0.0078431372549019607843137254902, 0.066666, 0.11764705882352941176470588235294);
+    glutSolidSphere(1, 25, 25);
+    glDisable(GL_CLIP_PLANE0);
+
+    glPopMatrix();
     glPopMatrix();
 }
 
@@ -447,14 +458,14 @@ void drawSpaceStation()
 {
     // Outer torus
     glPushMatrix();
-    glColor3f(1.0, 1.0, 1.0);
+    glColor3f(0.3058823529411765, 0.2823529411764706, 0.2745098039215686);
     glTranslatef(0.0, 0.0, -7.0);
     glutWireTorus(.25, 2, 25, 25);
     glPopMatrix();
 
     // Inner torus
     glPushMatrix();
-    glColor3f(0.0, 0.0, 1.0);
+    glColor3f(0.992156862745, 0.3098039215686275, 0.0196078431372549);
     glTranslatef(0.0, 0.0, -7.0);
     glutWireTorus(.35, .35, 25, 25);
     glPopMatrix();
@@ -462,7 +473,7 @@ void drawSpaceStation()
     // Three connecting lines
     glLineWidth(8.0);
     glBegin(GL_LINES);
-        glColor3f(1.0, 1.0, 1.0);
+        glColor3f(0.3058823529411765, 0.2823529411764706, 0.2745098039215686);
         
         glVertex3f(0.65, -0.25, -7.0);
         glVertex3f(1.5, -1.0, -7.0);
@@ -478,17 +489,42 @@ void drawSpaceStation()
 void drawUrsaMajor()
 {
     glPointSize(4.0);
-    glColor3f(1.0, 1.0, 1.0);
+    glColor3f(0.9843137254901961, 0.8, 0.0235294117647059);
     glBegin(GL_POINTS);
-        glVertex3f(-2.5, 6.5, -8.0);
-        glVertex3f(-.4, 6.7, -8.0);
-        glVertex3f(1.65, 5.75, -8.0);
-        glVertex3f(3.5, 5.25, -8.0);
-        glVertex3f(3.65, 4.15, -8.0);
-        glVertex3f(6.5, 5.45, -8.0);
-        glVertex3f(6.0, 4.05, -8.0);
+        glVertex3f(-2.5, 6.5, -21.0);
+        glVertex3f(-.4, 6.7, -21.0);
+        glVertex3f(1.65, 5.75, -21.0);
+        glVertex3f(3.5, 5.25, -21.0);
+        glVertex3f(3.65, 4.15, -21.0);
+        glVertex3f(6.5, 5.45, -21.0);
+        glVertex3f(6.0, 4.05, -21.0);
     glEnd();
     glPointSize(1.0);
+}
+
+void drawMenu()
+{
+    int moonSizeMenu;
+    moonSizeMenu = glutCreateMenu(moonMenu);
+    glutAddMenuEntry("Small", 1);
+    glutAddMenuEntry("Medium", 2);
+    glutAddMenuEntry("Large", 3);
+    glutAddMenuEntry("Extra Large", 4);
+
+    int stationAngleMenu;
+    stationAngleMenu = glutCreateMenu(stationMenu);
+    glutAddMenuEntry("60 Degrees", 1);
+    glutAddMenuEntry("120 Degrees", 2);
+    glutAddMenuEntry("180 Degrees", 3);
+    glutAddMenuEntry("240 Degrees", 4);
+
+    glutCreateMenu(mainMenu);
+    glutAddSubMenu("Moon Size", moonMenu);
+    glutAddSubMenu("Rotate Station", stationMenu);
+    glutAddMenuEntry("Rotate Sky", 1);
+
+    
+    glutAttachMenu(GLUT_RIGHT_BUTTON);
 }
 
 // Mouse callback routine for Control Panel.
@@ -551,11 +587,26 @@ void MouseControlPanel(int button, int state, int x, int y)
         }
 
         // Radio buttons controller
-        if (xMouse >= 60 && xMouse <= 65 && yMouse >= 65 && yMouse <= 70) radiobuttonselected = 1;
-        if (xMouse >= 60 && xMouse <= 65 && yMouse >= 55 && yMouse <= 60) radiobuttonselected = 2;
-        if (xMouse >= 60 && xMouse <= 65 && yMouse >= 45 && yMouse <= 50) radiobuttonselected = 3;
-        if (xMouse >= 60 && xMouse <= 65 && yMouse >= 35 && yMouse <= 40) radiobuttonselected = 4;
-        if (xMouse >= 60 && xMouse <= 65 && yMouse >= 25 && yMouse <= 30) radiobuttonselected = 5;
+        if (xMouse >= 60 && xMouse <= 65 && yMouse >= 65 && yMouse <= 70) {
+            radiobuttonselected = 1;
+            moonAngle = 90;
+        }
+        if (xMouse >= 60 && xMouse <= 65 && yMouse >= 55 && yMouse <= 60) {
+            radiobuttonselected = 2;
+            moonAngle = 30;
+        } 
+        if (xMouse >= 60 && xMouse <= 65 && yMouse >= 45 && yMouse <= 50) {
+            radiobuttonselected = 3;
+            moonAngle = 0;
+        } 
+        if (xMouse >= 60 && xMouse <= 65 && yMouse >= 35 && yMouse <= 40) {
+            radiobuttonselected = 4;
+            moonAngle = -30;
+        } 
+        if (xMouse >= 60 && xMouse <= 65 && yMouse >= 25 && yMouse <= 30) {
+            radiobuttonselected = 5;
+            moonAngle = -90;
+        } 
 
         glutSetWindow(controlPanel);
         glutPostRedisplay();
@@ -618,20 +669,20 @@ void drawSceneSkyPanel(void)
     glFrustum(-5.0, 5.0, -5.0, 5.0, 5.0, 50.0);
 
     glPushMatrix();
-    // Change angle of rotation to rotate the clipping plane
-    glRotated(0, 0, 1, 0);
-    double rEq[4] = {1, 0, 0, 0 };
-    glClipPlane(GL_CLIP_PLANE0, rEq);
-    glEnable(GL_CLIP_PLANE0);
-    drawDarkMoon();
-    glDisable(GL_CLIP_PLANE0);
-    glPopMatrix();
-
+    glTranslated(0.0, 0.0, -10);
+    glScaled(moonSize, moonSize, 1);
     drawMoon();
+    glPopMatrix();
+    
+   
     drawStars();
 
     if (spaceStation) {
+        glPushMatrix();
+        glRotated(stationAngle, 0, 0, 1);
+        glTranslated(-4.5, 4.5, 0.0);
         drawSpaceStation();
+        glPopMatrix();
     }
 
     if (jupiter) {
@@ -639,7 +690,11 @@ void drawSceneSkyPanel(void)
     }
 
     if (ursaMajor) {
+        glPushMatrix();
+        glScaled(1.4, 1.4, 1.0);
+        glTranslated(0.0, 5.0, 0.0);
         drawUrsaMajor();
+        glPopMatrix;
     }
 
     glutSwapBuffers(); //instead of glFlush, double buffer
@@ -653,8 +708,7 @@ void setupControlPanel(void)
   glEnableClientState(GL_VERTEX_ARRAY);
   glEnableClientState(GL_COLOR_ARRAY);
 
-  /*glVertexPointer(3, GL_FLOAT, 0, vertices);
-  glColorPointer(3, GL_FLOAT, 0, colors);*/
+  
 }
 
 // Setup for Sky Panel
@@ -665,8 +719,7 @@ void setupSkyPanel(void)
     glEnableClientState(GL_VERTEX_ARRAY);
     glEnableClientState(GL_COLOR_ARRAY);
 
-    /*glVertexPointer(3, GL_FLOAT, 0, vertices);
-    glColorPointer(3, GL_FLOAT, 0, colors);*/
+    
 }
 
 // OpenGL window reshape routine.
@@ -690,6 +743,7 @@ void keyInput(unsigned char key, int x, int y)
 
     case 'n':
         radiobuttonselected = 1;
+        moonAngle = 90;
         glutSetWindow(controlPanel);
         glutPostRedisplay();
         glutSetWindow(skyPanel);
@@ -698,6 +752,7 @@ void keyInput(unsigned char key, int x, int y)
 
     case 'c':
         radiobuttonselected = 2;
+        moonAngle = 30;
         glutSetWindow(controlPanel);
         glutPostRedisplay();
         glutSetWindow(skyPanel);
@@ -706,6 +761,7 @@ void keyInput(unsigned char key, int x, int y)
 
     case 'h':
         radiobuttonselected = 3;
+        moonAngle = 0;
         glutSetWindow(controlPanel);
         glutPostRedisplay();
         glutSetWindow(skyPanel);
@@ -714,6 +770,7 @@ void keyInput(unsigned char key, int x, int y)
 
     case 'g':
         radiobuttonselected = 4;
+        moonAngle = -30;
         glutSetWindow(controlPanel);
         glutPostRedisplay();
         glutSetWindow(skyPanel);
@@ -722,6 +779,7 @@ void keyInput(unsigned char key, int x, int y)
 
     case 'f':
         radiobuttonselected = 5;
+        moonAngle = -90;
         glutSetWindow(controlPanel);
         glutPostRedisplay();
         glutSetWindow(skyPanel);
