@@ -12,9 +12,14 @@
 *
 * Date submitted:  February 28, 2022
 *
-* References:  
+* References:  None
 *
-* Interactions:   
+* Interactions:   Press n for new moon
+*                 Press c for crescent moon
+*                 Press h for half moon
+*                 Press g for gibbous moon
+*                 Press f for full moon
+*                 Right click to rotate the space station, change the moon size, change the sky color and exit the program
 *******************************************/
 
 
@@ -33,7 +38,7 @@ using namespace std;
 
 // Globals.
 static int controlPanel, skyPanel;
-static int radiobuttonselected = 2;
+static int radiobuttonselected = 1;
 static bool firstBoxChecked = false;
 static bool secondBoxChecked = false;
 static bool thirdBoxChecked = false;
@@ -45,6 +50,8 @@ static bool ursaMajor = false;
 static int moonAngle = -90;
 static int stationAngle = 330;
 static float moonSize = 5.0;
+static int rotateSky = 0;
+static bool nightSky = true;
 
 
 //Draws the background of the control panel
@@ -428,7 +435,7 @@ void drawMoon()
     double moonEq[4] = { 1, 0, 0, 0 };
     glClipPlane(GL_CLIP_PLANE0, moonEq);
     glEnable(GL_CLIP_PLANE0);
-    glColor3f(1.0, 1.0, 1.0);
+    glColor3f(0.98823529411764705882352941176471, 0.95686274509803921568627450980392, 0.89019607843137254901960784313725);
     glutSolidSphere(1, 25, 25);
     glDisable(GL_CLIP_PLANE0);
 
@@ -502,29 +509,38 @@ void drawUrsaMajor()
     glPointSize(1.0);
 }
 
-void drawMenu()
+void drawAlienShip()
 {
-    int moonSizeMenu;
-    moonSizeMenu = glutCreateMenu(moonMenu);
-    glutAddMenuEntry("Small", 1);
-    glutAddMenuEntry("Medium", 2);
-    glutAddMenuEntry("Large", 3);
-    glutAddMenuEntry("Extra Large", 4);
+    glPushMatrix();
+    glColor3f(0.0, 1.0, 0.0);
+    glTranslatef(5.0, 5.0, -7.0);
+    glutWireDodecahedron();
+    glPopMatrix();
+}
 
-    int stationAngleMenu;
-    stationAngleMenu = glutCreateMenu(stationMenu);
-    glutAddMenuEntry("60 Degrees", 1);
-    glutAddMenuEntry("120 Degrees", 2);
-    glutAddMenuEntry("180 Degrees", 3);
-    glutAddMenuEntry("240 Degrees", 4);
+// Mouse callback routine for Sky Panel.
+void MouseSkyPanel(int button, int state, int x, int y)
+{
+    //int xMouse, yMouse;
+    /*if (button == GLUT_LEFT_BUTTON && state == GLUT_DOWN)
+    {
+        glutSetWindow(controlPanel);
+        glutPostRedisplay();
+        glutSetWindow(skyPanel);
+        glutPostRedisplay();
+    }*/
+}
 
-    glutCreateMenu(mainMenu);
-    glutAddSubMenu("Moon Size", moonMenu);
-    glutAddSubMenu("Rotate Station", stationMenu);
-    glutAddMenuEntry("Rotate Sky", 1);
 
-    
-    glutAttachMenu(GLUT_RIGHT_BUTTON);
+void printInstructions() 
+{
+    cout << "Interaction:" << endl;
+    cout << "Press n for new moon" << endl;
+    cout << "Press c for crescent moon" << endl;
+    cout << "Press h for half moon" << endl;
+    cout << "Press g for gibbous moon" << endl;
+    cout << "Press f for full moon" << endl;
+    cout << "Right click to rotate the space station, change the moon size, change the sky color and exit the program" << endl;
 }
 
 // Mouse callback routine for Control Panel.
@@ -594,19 +610,19 @@ void MouseControlPanel(int button, int state, int x, int y)
         if (xMouse >= 60 && xMouse <= 65 && yMouse >= 55 && yMouse <= 60) {
             radiobuttonselected = 2;
             moonAngle = 30;
-        } 
+        }
         if (xMouse >= 60 && xMouse <= 65 && yMouse >= 45 && yMouse <= 50) {
             radiobuttonselected = 3;
             moonAngle = 0;
-        } 
+        }
         if (xMouse >= 60 && xMouse <= 65 && yMouse >= 35 && yMouse <= 40) {
             radiobuttonselected = 4;
             moonAngle = -30;
-        } 
+        }
         if (xMouse >= 60 && xMouse <= 65 && yMouse >= 25 && yMouse <= 30) {
             radiobuttonselected = 5;
             moonAngle = -90;
-        } 
+        }
 
         glutSetWindow(controlPanel);
         glutPostRedisplay();
@@ -614,31 +630,6 @@ void MouseControlPanel(int button, int state, int x, int y)
         glutPostRedisplay();
     }
 }
-
-// Mouse callback routine for Sky Panel.
-void MouseSkyPanel(int button, int state, int x, int y)
-{
-    //int xMouse, yMouse;
-    /*if (button == GLUT_LEFT_BUTTON && state == GLUT_DOWN)
-    {
-        glutSetWindow(controlPanel);
-        glutPostRedisplay();
-        glutSetWindow(skyPanel);
-        glutPostRedisplay();
-    }*/
-}
-
-
-void printInstructions() 
-{
-    cout << "Interaction:" << endl;
-    cout << "Press n for new moon" << endl;
-    cout << "Press c for crescent moon" << endl;
-    cout << "Press h for half moon" << endl;
-    cout << "Press g for gibbous moon" << endl;
-    cout << "Press f for full moon" << endl;
-}
-
 
 // Drawing routine for Control Panel.
 void drawSceneControlPanel(void)
@@ -667,6 +658,10 @@ void drawSceneSkyPanel(void)
     glEnable(GL_DEPTH_TEST);
     glLoadIdentity();
     glFrustum(-5.0, 5.0, -5.0, 5.0, 5.0, 50.0);
+    
+
+    glPushMatrix();
+    glRotated(rotateSky, 0, 0, 1);
 
     glPushMatrix();
     glTranslated(0.0, 0.0, -10);
@@ -689,6 +684,10 @@ void drawSceneSkyPanel(void)
         drawJupiter();
     }
 
+    if (alienShip) {
+        drawAlienShip();
+    }
+
     if (ursaMajor) {
         glPushMatrix();
         glScaled(1.4, 1.4, 1.0);
@@ -696,6 +695,8 @@ void drawSceneSkyPanel(void)
         drawUrsaMajor();
         glPopMatrix;
     }
+
+    glPopMatrix();
 
     glutSwapBuffers(); //instead of glFlush, double buffer
 }
@@ -707,19 +708,20 @@ void setupControlPanel(void)
 
   glEnableClientState(GL_VERTEX_ARRAY);
   glEnableClientState(GL_COLOR_ARRAY);
-
-  
 }
 
 // Setup for Sky Panel
 void setupSkyPanel(void)
 {
-    glClearColor(0.0078431372549019607843137254902, 0.066666, 0.11764705882352941176470588235294, 1.0);
+    if (nightSky) {
+        glClearColor(0.0078431372549019607843137254902, 0.066666, 0.11764705882352941176470588235294, 1.0);
+    }
+    else {
+        glClearColor(0.0, 0.0, 1.0, 1.0);
+    }
 
     glEnableClientState(GL_VERTEX_ARRAY);
-    glEnableClientState(GL_COLOR_ARRAY);
-
-    
+    glEnableClientState(GL_COLOR_ARRAY); 
 }
 
 // OpenGL window reshape routine.
@@ -791,6 +793,95 @@ void keyInput(unsigned char key, int x, int y)
   }
 }
 
+// Callback function for main menu
+void mainMenu(int id)
+{
+    if (id == 1) exit(0);
+
+    glutSetWindow(skyPanel);
+    glutPostRedisplay();
+}
+
+void skyColorMenu(int id)
+{
+    if (id == 1) {
+        glClearColor(0.0078431372549019607843137254902, 0.066666, 0.11764705882352941176470588235294, 1.0);
+        nightSky == true;
+    }
+
+    if (id == 2) {
+        glClearColor(0.0, 0.0, 1.0, 1.0);
+        nightSky == false;
+    }
+
+    glutSetWindow(skyPanel);
+    glutPostRedisplay();
+}
+
+// Callback function for moon size menu
+void moonMenu(int id)
+{
+    if (id == 1) moonSize = 2.0;
+
+    if (id == 2) moonSize = 5.0;
+
+    if (id == 3) moonSize = 10.0;
+    
+    if (id == 4) moonSize = 15.0;
+
+    glutSetWindow(skyPanel);
+    glutPostRedisplay();
+}
+
+// Callback function for station angle menu
+void stationMenu(int id)
+{
+    if (id == 1) stationAngle = 60;
+
+    if (id == 2) stationAngle = 120;
+
+    if (id == 3) stationAngle = 180;
+
+    if (id == 4) stationAngle = 230;
+
+    if (id == 5) stationAngle = 0;
+
+    glutSetWindow(skyPanel);
+    glutPostRedisplay();
+}
+
+void drawMenu()
+{
+    int skyColor;
+    skyColor = glutCreateMenu(skyColorMenu);
+    glutAddMenuEntry("Night", 1);
+    glutAddMenuEntry("Day", 2);
+
+    int moonSizeMenu;
+    moonSizeMenu = glutCreateMenu(moonMenu);
+    glutAddMenuEntry("Small", 1);
+    glutAddMenuEntry("Medium", 2);
+    glutAddMenuEntry("Large", 3);
+    glutAddMenuEntry("Extra Large", 4);
+
+    int stationAngleMenu;
+    stationAngleMenu = glutCreateMenu(stationMenu);
+    glutAddMenuEntry("60 Degrees", 1);
+    glutAddMenuEntry("120 Degrees", 2);
+    glutAddMenuEntry("180 Degrees", 3);
+    glutAddMenuEntry("230 Degrees", 4);
+    glutAddMenuEntry("Reset Angle", 5);
+
+    glutCreateMenu(mainMenu);
+    glutAddSubMenu("Moon Size", moonSizeMenu);
+    glutAddSubMenu("Rotate Station", stationAngleMenu);
+    glutAddSubMenu("Sky Color", skyColor);
+    glutAddMenuEntry("Exit", 3);
+
+
+    glutAttachMenu(GLUT_RIGHT_BUTTON);
+}
+
 // Main routine.
 int main(int argc, char **argv) 
 {
@@ -817,6 +908,9 @@ int main(int argc, char **argv)
   // Both Panels
   glutReshapeFunc(resize);
   glutKeyboardFunc(keyInput);
+
+  // Right Click Panel
+  drawMenu();
   
   glutMainLoop(); 
   
