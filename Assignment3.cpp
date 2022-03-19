@@ -31,12 +31,15 @@ using namespace std;
 static int PI = 3.14159;
 static int lookPos = 0;
 static int propRot = 0;
+static int act = 1;
+static float heliSpeed = .0015;
+static float rotHeli = 0;
 static float xPosHeli = 0;
 static float yPosHeli = 0;
 static float zPosHeli = 0;
 static bool heliPower = false;
-static bool heliAct1 = false;
-static bool heliAct2 = false;
+static bool heliAnimate = false;
+
 
 //Projection for entire project
 void setProjection()
@@ -55,6 +58,7 @@ void animateProp()
     if (propRot == 360) {
         propRot = 0;
     }
+    
     else {
         propRot += 12;
     }
@@ -72,31 +76,192 @@ void propAnimation()
 }
 
 //Animation using timer function for movement
-void animateHeliAct1(void)
+void animateHeli(void)
 {
-    if (yPosHeli < 10) {
-        yPosHeli += .005;
+    if (act == 1 && heliPower == true) {
+        if (yPosHeli < 10) {
+            yPosHeli += heliSpeed;
+        }
+        else {
+            act = 2;
+        }
     }
 
-    if (yPosHeli == 10) {
-        heliAct2 = true;
+    if (act == 2 && heliPower == false) {
+        if (yPosHeli > 0) {
+            yPosHeli -= heliSpeed;
+        } 
     }
-    glutPostRedisplay();
-}
+    if (act == 2 && heliPower == true) {
+        if (yPosHeli < 10) {
+            yPosHeli += heliSpeed;
+        }
+        if (zPosHeli < 4) {
+            zPosHeli += heliSpeed;
+        }
+        else {
+            act = 3;
+        }
+    }
+    
+    if (act == 3 && heliPower == false) {
+        if (yPosHeli > 0) {
+            yPosHeli -= heliSpeed;
+        }
+    }
+    if (act == 3 && heliPower == true) {
+        if (yPosHeli < 10) {
+            yPosHeli += heliSpeed;
+        }
+        if (xPosHeli > -7) {
+            xPosHeli -= heliSpeed;
+        }
+        else {
+            act = 4;
+        }
+    }
 
-void animateHeliAct2(void)
-{
-    if (xPosHeli > -2) {
-        xPosHeli -= 1;
+    if (act == 4 && heliPower == false) {
+        if (yPosHeli > 0) {
+            yPosHeli -= heliSpeed;
+        }
     }
+    if (act == 4 && heliPower == true) {
+        if (yPosHeli < 10) {
+            yPosHeli += heliSpeed;
+        }
+        if (yPosHeli < 15) {
+            yPosHeli += heliSpeed;
+        }
+        else {
+            act = 5;
+        }
+    }
+
+    if (act == 5 && heliPower == false) {
+        if (yPosHeli > 0) {
+            yPosHeli -= heliSpeed;
+        }
+    }
+    if (act == 5 && heliPower == true) {
+        if (yPosHeli < 10) {
+            yPosHeli += heliSpeed;
+        }
+        if (zPosHeli > -10) {
+            zPosHeli -= heliSpeed;
+        }
+        else {
+            act = 6;
+        }
+    }
+
+    if (act == 6 && heliPower == false) {
+        if (yPosHeli > 0) {
+            yPosHeli -= heliSpeed;
+        }
+    }
+    if (act == 6 && heliPower == true) {
+        if (yPosHeli > 10) {
+            yPosHeli -= heliSpeed;
+        }
+        else {
+            act = 7;
+        }
+    }
+
+    if (act == 7 && heliPower == false) {
+        if (yPosHeli > 0) {
+            yPosHeli -= heliSpeed;
+        }
+    }
+    if (act == 7 && heliPower == true) {
+        if (yPosHeli < 10) {
+            yPosHeli += heliSpeed;
+        }
+        if (xPosHeli < 10) {
+            xPosHeli += heliSpeed;
+        }
+        else {
+            act = 8;
+        }
+    }
+
+    if (act == 8 && heliPower == false) {
+        if (yPosHeli > 0) {
+            yPosHeli -= heliSpeed;
+        }
+    }
+    if (act == 8 && heliPower == true) {
+        if (yPosHeli < 10) {
+            yPosHeli += heliSpeed;
+        }
+        if (zPosHeli < 5) {
+            zPosHeli += heliSpeed;
+        }
+        else {
+            act = 9;
+        }
+    }
+
+    if (act == 9 && heliPower == false) {
+        if (yPosHeli > 0) {
+            yPosHeli -= heliSpeed;
+        }
+    }
+    if (act == 9 && heliPower == true) {
+        if (yPosHeli < 10) {
+            yPosHeli += heliSpeed;
+        }
+        if (xPosHeli > 0) {
+            xPosHeli -= heliSpeed;
+        }
+        else {
+            act = 10;
+        }
+    }
+
+    if (act == 10 && heliPower == false) {
+        if (yPosHeli > 0) {
+            yPosHeli -= heliSpeed;
+        }
+    }
+    if (act == 10 && heliPower == true) {
+        if (yPosHeli < 10) {
+            yPosHeli += heliSpeed;
+        }
+        if (zPosHeli > 0) {
+            zPosHeli -= heliSpeed;
+        }
+        else {
+            act = 11;
+        }
+    }
+
+    if (act == 11 && heliPower == false) {
+        if (yPosHeli > 0) {
+            yPosHeli -= heliSpeed;
+        }
+    }
+    if (act == 11 && heliPower == true) { 
+        if (yPosHeli > 0) {
+            yPosHeli -= heliSpeed;
+        }
+        else {
+            act = 12;
+        }
+    }
+
+    if (act == 12) {
+        heliAnimate = !heliAnimate;
+        act = 1;
+    }
+
     glutPostRedisplay();
 }
 
 void heliAnimation(int x)
 {
-    if (heliAct1) animateHeliAct1();
-
-    if (heliAct2) animateHeliAct2();
+    if (heliAnimate) animateHeli();
 
     glutTimerFunc(100, heliAnimation, 1);
 }
@@ -303,15 +468,32 @@ void drawHoop()
     glColor3f(1.0, 0.0, 0.0);
     glPushMatrix();
     glTranslated(-3, 2, -10);
-    glScaled(.25, 5, .5);
+    glScaled(.25, 25, .5);
     glutSolidCube(1);
     glPopMatrix();
 
     glColor3f(0.98823529411764705882352941176471, 0.01960784313725490196078431372549, 0.63137254901960784313725490196078);
     glPushMatrix();
-    glTranslated(-3, 11, -10);
+    glTranslated(-3, 21, -10);
     glutWireTorus(1, 6, 30, 30);
     glPopMatrix();
+}
+
+void writeBitmapString(void* font, const char* string)
+{
+    const char* c;
+
+    for (c = string; *c != '\0'; c++) glutBitmapCharacter(font, *c);
+}
+
+void drawText()
+{
+    glEnable(GL_DEPTH_TEST);
+    glColor3f(1, 0, 0);
+    glRasterPos3f(3.0, 5.0, .7);
+    //writeBitmapString(GLUT_BITMAP_8_BY_13, "Current Score: ");
+    glDisable(GL_DEPTH_TEST);
+
 }
 //-------------------------------------------------------------------------------------------------------------//
  
@@ -328,16 +510,16 @@ void drawScene(void)
     //View
     //South
     if (lookPos == 0) {
-        gluLookAt(6, 5, 1,
-            6, 5, -6,
+        gluLookAt(6, 5, 5,
+            6, 5, -12,
             0, 1, 0);
         glutPostRedisplay();
     }
 
     //East
     if (lookPos == 1) {
-        gluLookAt(15, 6, -6,
-            10, 5, -6,
+        gluLookAt(18, 6, -6,
+            6, 5, -6,
             0, 1, 0);
         glutPostRedisplay();
     }
@@ -352,7 +534,7 @@ void drawScene(void)
 
     //West
     if (lookPos == 3) {
-        gluLookAt(-4, 6, -6,
+        gluLookAt(-6, 6, -6,
             1, 5, -6,
             0, 1, 0);
         glutPostRedisplay();
@@ -363,10 +545,9 @@ void drawScene(void)
 
     glEnable(GL_DEPTH_TEST);
 
-
     glPushMatrix();
-        /*glRotated(90, 0, 1, 0);*/
-        glTranslated(xPosHeli, yPosHeli, 0);
+        glRotated(rotHeli, 0, 1, 0);
+        glTranslated(xPosHeli, yPosHeli, zPosHeli);
         drawHeli();
     glPopMatrix();
     propAnimation();
@@ -386,7 +567,6 @@ void drawScene(void)
 
     drawHoop();
 
-    
     glPushMatrix();
     glTranslated(2, 0, 0);
         drawTree();
@@ -401,6 +581,8 @@ void drawScene(void)
         glTranslated(2, 0, 8);
         drawTree();
     glPopMatrix();
+
+    drawText();
 
     glutSwapBuffers();
 }
@@ -428,19 +610,19 @@ void keyInput(unsigned char key, int x, int y)
         exit(0);
         break;
 
-    case 's':
+    case '3':
         lookPos = 0;
         break;
 
-    case 'e':
+    case '2':
         lookPos = 1;
         break;
 
-    case 'n':
+    case '1':
         lookPos = 2;
         break;
 
-    case 'w':
+    case '4':
         lookPos = 3;
         break;
 
@@ -449,8 +631,10 @@ void keyInput(unsigned char key, int x, int y)
         break;
 
     case 'a':
-        heliAct1 = !heliAct1;
+        heliAnimate = !heliAnimate;
         break;
+
+    
 
     default:
         break;
@@ -461,7 +645,7 @@ void keyInput(unsigned char key, int x, int y)
 void printInteraction(void)
 {
     cout << "Interaction:" << endl;
-    cout << "Press " << endl;
+   
 }
 
 //Main Loop
