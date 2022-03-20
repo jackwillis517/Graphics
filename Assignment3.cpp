@@ -26,21 +26,52 @@
 #endif
 
 
-
 using namespace std;
 static int PI = 3.14159;
+
+//Color picking, mouse & perspective globals
+static int itemID = 0;
+static int xMouse, yMouse;
+static int height, width;
+static bool selecting = false;
 static int lookPos = 0;
+
+//Helicopter globals
+static int HELI = 1;
 static int propRot = 0;
 static int act = 1;
-static float heliSpeed = .0015;
+static float heliSpeed = .0003;
 static float rotHeli = 0;
-static float xPosHeli = 0;
-static float yPosHeli = 0;
-static float zPosHeli = 0;
 static bool heliPower = false;
 static bool heliAnimate = false;
 
+//Balloon globals
+static bool balloonAnimate = false;
 
+//Position globals for helicopter and balloons
+static float xPosHeli = 0;
+static float yPosHeli = 0;
+static float zPosHeli = 0;
+static float xPosBalloon1 = 6;
+static float yPosBalloon1 = 1;
+static float zPosBalloon1 = -6;
+
+//Color rgbs for objects changed by balloon
+static float cone1ColorR = 0.0;
+static float cone1ColorG = 1.0;
+static float cone1ColorB = 0.0;
+static float cone2ColorR = 0.76862745098039215686274509803922;
+static float cone2ColorG = 0.21568627450980392156862745098039;
+static float cone2ColorB = 0.86666666666666666666666666666667;
+static float cone3ColorR = 0.0;
+static float cone3ColorG = 1.0;
+static float cone3ColorB = 1.0;
+static float torusColorR = 0.98823529411764705882352941176471;
+static float torusColorG = 0.01960784313725490196078431372549;
+static float torusColorB = 0.63137254901960784313725490196078;
+
+
+//---------------------------------------------Utility Functions------------------------------------------------//
 //Projection for entire project
 void setProjection()
 {
@@ -49,6 +80,54 @@ void setProjection()
     glFrustum(-4, 4, -4, 4, 1, 21);
     glMatrixMode(GL_MODELVIEW);
 }
+
+//Identification function for color picking
+void getID(int x, int y)
+{
+    unsigned char pixel[3];
+    glReadPixels(x, y, 1, 1, GL_RGB, GL_UNSIGNED_BYTE, pixel);
+
+    if ((int)pixel[0] == 255 && (int)pixel[1] == 0 && (int)pixel[2] == 0) {
+        itemID = HELI;
+    }
+    else {
+        itemID = 0;
+    }
+
+    selecting = false;
+    glutPostRedisplay();
+}
+
+//Bitmap function for writing text to the screen
+void writeBitmapString(void* font, const char* string)
+{
+    const char* c;
+
+    for (c = string; *c != '\0'; c++) glutBitmapCharacter(font, *c);
+}
+
+//Collision function for checking if the balloon hits a specific spot
+void checkCollision() {
+    if (xPosHeli >= -8 && xPosHeli <= -2 && zPosHeli >= -4 && zPosHeli <= 5 && yPosBalloon1 < -5) {
+        cone1ColorR = 0.0;
+        cone1ColorG = 0.0;
+        cone1ColorB = 1.0;
+        cone2ColorR = 0.0;
+        cone2ColorG = 0.0;
+        cone2ColorB = 1.0;
+        cone3ColorR = 0.0;
+        cone3ColorG = 0.0;
+        cone3ColorB = 1.0;
+    }
+    if (xPosHeli >= -8 && xPosHeli <= -2 && zPosHeli >= -4 && zPosHeli <= -3 && yPosBalloon1 < 5) {
+        torusColorR = 0.0;
+        torusColorG = 0.0;
+        torusColorB = 1.0;
+    }
+    glutPostRedisplay();
+}
+//--------------------------------------------------------------------------------------------------------------//
+
 
 
 //---------------------------------------------Animations-------------------------------------------------------//
@@ -137,7 +216,7 @@ void animateHeli(void)
             act = 5;
         }
     }
-
+    
     if (act == 5 && heliPower == false) {
         if (yPosHeli > 0) {
             yPosHeli -= heliSpeed;
@@ -154,7 +233,7 @@ void animateHeli(void)
             act = 6;
         }
     }
-
+    
     if (act == 6 && heliPower == false) {
         if (yPosHeli > 0) {
             yPosHeli -= heliSpeed;
@@ -185,7 +264,7 @@ void animateHeli(void)
             act = 8;
         }
     }
-
+    
     if (act == 8 && heliPower == false) {
         if (yPosHeli > 0) {
             yPosHeli -= heliSpeed;
@@ -236,7 +315,7 @@ void animateHeli(void)
             act = 11;
         }
     }
-
+    
     if (act == 11 && heliPower == false) {
         if (yPosHeli > 0) {
             yPosHeli -= heliSpeed;
@@ -255,7 +334,6 @@ void animateHeli(void)
         heliAnimate = !heliAnimate;
         act = 1;
     }
-
     glutPostRedisplay();
 }
 
@@ -266,19 +344,46 @@ void heliAnimation(int x)
     glutTimerFunc(100, heliAnimation, 1);
 }
 
+void animateBalloon()
+{
+    if (yPosBalloon1 > -16) {
+        yPosBalloon1 -= .005;
+    }
+
+    glutPostRedisplay();
+}
+
+void balloonAnimation(int x) 
+{
+    if (balloonAnimate) animateBalloon();
+    glutTimerFunc(100, balloonAnimation, 1);
+}
 //-------------------------------------------------------------------------------------------------------------//
 
 
+
 //---------------------------------------------Drawing Functions-----------------------------------------------//
-void drawHeli()
+void drawBalloons()
+{
+    glColor3f(0.0, 0.0, 1.0);
+    glPushMatrix();
+    glTranslated(xPosBalloon1, yPosBalloon1, zPosBalloon1);
+    glScaled(.5, .5, .5);
+    glutSolidSphere(1, 25, 25);
+    glPopMatrix();
+}
+
+void drawHeli(float c1, float c2, float c3)
 {
     //Helicopter Body
-    glColor3f(0.94901960784313725490196078431373, 0.42352941176470588235294117647059, 0.07450980392156862745098039215686);
+    glColor3f(c1, c2, c3);
     glPushMatrix();
     glTranslated(6, 3, -6);
     glScaled(2, 2, 3);
     glutSolidSphere(1, 25, 25);
     glPopMatrix();
+
+    drawBalloons();
 
     //Helicopter Tail
     glColor3f(0.0, 1.0, 0.0);
@@ -330,7 +435,6 @@ void drawHeli()
         glVertex3f(5.75, 3, -17.5);
         glVertex3f(5.75, 0, -17);
     glEnd();
-    
 
     //Helicopter Landing Gear
     glColor3f(0.0, 0.0, 0.0);
@@ -350,8 +454,6 @@ void drawHeli()
         glVertex3f(5, .75, -8);
     glEnd();
 }
-
-
 
 void drawGround() 
 {
@@ -425,21 +527,24 @@ void drawCar()
 
 void drawCones()
 {
-    glColor3f(0.0, 1.0, 0.0);
+    //Green cone
+    glColor3f(cone1ColorR, cone1ColorG, cone1ColorB);
     glPushMatrix();
     glTranslated(-2, 2, -4);
     glRotated(-90, 1, 0, 0);
     glutWireCone(1, 3, 20, 20);
     glPopMatrix();
 
-    glColor3f(0.76862745098039215686274509803922, 0.21568627450980392156862745098039, 0.86666666666666666666666666666667);
+    //Purple cone
+    glColor3f(cone2ColorR, cone2ColorG, cone2ColorB);
     glPushMatrix();
     glTranslated(-.25, 2, -3);
     glRotated(-90, 1, 0, 0);
     glutWireCone(.5, 1.5, 20, 20);
     glPopMatrix();
 
-    glColor3f(0.0, 1.0, 1.0);
+    //Light blue cone
+    glColor3f(cone3ColorR, cone3ColorG, cone3ColorB);
     glPushMatrix();
     glTranslated(-1.5, 2, -2);
     glRotated(-90, 1, 0, 0);
@@ -472,40 +577,96 @@ void drawHoop()
     glutSolidCube(1);
     glPopMatrix();
 
-    glColor3f(0.98823529411764705882352941176471, 0.01960784313725490196078431372549, 0.63137254901960784313725490196078);
+    //Pink torus
+    glColor3f(torusColorR, torusColorG, torusColorB);
     glPushMatrix();
     glTranslated(-3, 21, -10);
     glutWireTorus(1, 6, 30, 30);
     glPopMatrix();
 }
 
-void writeBitmapString(void* font, const char* string)
-{
-    const char* c;
-
-    for (c = string; *c != '\0'; c++) glutBitmapCharacter(font, *c);
-}
-
 void drawText()
 {
-    glEnable(GL_DEPTH_TEST);
     glColor3f(1, 0, 0);
     glRasterPos3f(3.0, 5.0, .7);
     //writeBitmapString(GLUT_BITMAP_8_BY_13, "Current Score: ");
-    glDisable(GL_DEPTH_TEST);
-
 }
-//-------------------------------------------------------------------------------------------------------------//
- 
+
+void drawClickedText()
+{
+    glColor3f(1, 0, 0);
+    glRasterPos3f(3.0, 5.0, .7);
+    writeBitmapString(GLUT_BITMAP_8_BY_13, "SELECTED!");
+}
+
+//Helicopter color pick will be red
+void drawItems(void)
+{
+    glPushMatrix();
+    glRotated(rotHeli, 0, 1, 0);
+    glTranslated(xPosHeli, yPosHeli, zPosHeli);
+    if (itemID == HELI)
+    {
+        drawClickedText();
+        balloonAnimate = true;
+    }
+    if (selecting)
+    {
+        drawHeli(1.0, 0.0, 0.0);
+    }
+    else
+    {
+        drawHeli(0.94901960784313725490196078431373, 0.42352941176470588235294117647059, 0.07450980392156862745098039215686);
+    }
+    glPopMatrix();
+    propAnimation();
+    heliAnimation(1);
+    balloonAnimation(1);
+    checkCollision();
+    cout << xPosHeli << endl;
+    cout << yPosHeli << endl;
+    cout << zPosHeli << endl;
+
+    drawGround();
+
+    glPushMatrix();
+    glTranslated(0, -2, 4);
+    drawCar();
+    glPopMatrix();
+
+    glPushMatrix();
+    glTranslated(0, -2, 2);
+    drawCones();
+    glPopMatrix();
+
+    drawHoop();
+
+    glPushMatrix();
+    glTranslated(2, 0, 0);
+    drawTree();
+    glPopMatrix();
+
+    glPushMatrix();
+    glTranslated(2, 0, 4);
+    drawTree();
+    glPopMatrix();
+
+    glPushMatrix();
+    glTranslated(2, 0, 8);
+    drawTree();
+    glPopMatrix();
+
+    drawText();
+}
 
 //Drawing to Screen Function
 void drawScene(void)
 {
-    
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     setProjection();
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
+    glEnable(GL_DEPTH_TEST);
 
     //View
     //South
@@ -540,58 +701,27 @@ void drawScene(void)
         glutPostRedisplay();
     }
 
-    //Overhead
+    //Overhead - TODO
 
-
-    glEnable(GL_DEPTH_TEST);
-
-    glPushMatrix();
-        glRotated(rotHeli, 0, 1, 0);
-        glTranslated(xPosHeli, yPosHeli, zPosHeli);
-        drawHeli();
-    glPopMatrix();
-    propAnimation();
-    heliAnimation(1);
-    
-    drawGround();
-
-    glPushMatrix();
-        glTranslated(0, -2, 4);
-        drawCar();
-    glPopMatrix();
-
-    glPushMatrix();
-        glTranslated(0, -2, 2);
-        drawCones();
-    glPopMatrix();
-
-    drawHoop();
-
-    glPushMatrix();
-    glTranslated(2, 0, 0);
-        drawTree();
-    glPopMatrix();
-
-    glPushMatrix();
-        glTranslated(2, 0, 4);
-        drawTree();
-    glPopMatrix();
-
-    glPushMatrix();
-        glTranslated(2, 0, 8);
-        drawTree();
-    glPopMatrix();
-
-    drawText();
-
-    glutSwapBuffers();
+    if (selecting) {
+        drawItems();
+        getID(xMouse, yMouse);
+    }
+    else {
+        drawItems();
+        glutSwapBuffers();
+    }
 }
+//-------------------------------------------------------------------------------------------------------------//
 
 
+
+//---------------------------------------------Setup Functions-------------------------------------------------//
 //Setup Screen Function
 void setup(void)
 {
     glClearColor(0.07450980392156862745098039215686, 0.62745098039215686274509803921569, 0.94901960784313725490196078431373, 0.0);
+    glEnable(GL_DEPTH_TEST);
 }
 
 //Resize Screen Function
@@ -599,6 +729,8 @@ void resize(int w, int h)
 {
     glViewport(0, 0, (GLsizei)w, (GLsizei)h);
     setProjection();
+    height = h;
+    width = w;
 }
 
 //Keyboard Input Function
@@ -630,14 +762,22 @@ void keyInput(unsigned char key, int x, int y)
         heliPower = !heliPower;
         break;
 
-    case 'a':
+    case 'f':
         heliAnimate = !heliAnimate;
         break;
 
-    
-
     default:
         break;
+    }
+}
+
+void mouseInput(int button, int state, int x, int y)
+{
+    if (state == GLUT_DOWN && button == GLUT_LEFT) {
+        selecting = true;
+        xMouse = x;
+        yMouse = height - y;
+        glutPostRedisplay();
     }
 }
 
@@ -660,9 +800,11 @@ int main(int argc, char** argv)
     glutDisplayFunc(drawScene);
     glutReshapeFunc(resize);
     glutKeyboardFunc(keyInput);
+    glutMouseFunc(mouseInput);
     printInteraction();
     glutMainLoop();
 
     return 0;
 }
+//-------------------------------------------------------------------------------------------------------------//
 
