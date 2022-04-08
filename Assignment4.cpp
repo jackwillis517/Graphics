@@ -16,10 +16,11 @@
 *
 * Interactions:
 *******************************************/
-
 #define _CRT_SECURE_NO_DEPRECATE
 
 #include <iostream>
+#include <random>
+#include <ctime>
 
 #ifdef __APPLE__
 #  include <GLUT/glut.h>
@@ -31,26 +32,43 @@
 
 using namespace std;
 static int PI = 3.14159;
+static int randNum;
+static int selectedNum;
+
+//Color picking globals
 static int DOOR = 1;
-static int TORUS = 2;
+static int LIGHTS = 2;
+static int WAND = 3;
 static int itemID = 0;
 static int xMouse, yMouse;
 static int height, width;
 static bool selecting = false;
-static bool hatAnimate = false;
 
-static bool wandAnimate = false;
-static bool doorOpen = false;
+//Light globals
 static bool lightsOn = false;
 static bool spotlightOn = false;
 static bool flashlightOn = false;
+static int lightsClicked = 0;
+static float globAmbVal = 0.0;
+
+//Animation globals
+static bool hatAnimate = false;
+static bool wandAnimate = false;
+static bool doorOpen = false;
+static float hatRot = 0.0;
+static float hatHeight = 0.0;
+static float wandAnimateX = 0.0;
+static float wandAnimateY = 0.0;
+static int act = 1;
 
 //First person movement globals
-static float fpX = 0;
-static float fpZ = 28;
+static float fpX = 0.0;
+static float fpY = 5.0;
+static float fpZ = 28.0;
 static float stepsize = 1;
 static float rotsize = 5;
 static float degrees = 188;
+static bool canMove = true;
 
 //Door globals
 static float leftDoorAngle = 0;
@@ -63,7 +81,7 @@ static float rightDoorZPos = 20;
 static float rightDoorYPos = 9;
 static int doorClicked = 0;
 
-//Lighting
+//Lighting globals
 //Red
 float matAmbAndDifRed[] = { 0.9, 0.0, 0.0, 1.0 };
 //Green
@@ -84,10 +102,15 @@ float matAmbAndDifDarkGrey[] = { 0.1, 0.1, 0.1, 1.0 };
 float matAmbAndDifGrey[] = { 0.4, 0.4, 0.4, 1.0 };
 //Yellow
 float matAmbAndDifYellow[] = { 0.9, 0.9, 0.0, 1.0 };
-
+//Material globals
+float noEmiss[] = { 0.0, 0.0, 0.0, 1.0 };
 
 float matSpec[] = { 1.0, 1.0, 1.0, 1.0 };
+float matSpecBlue[] = { 0.0, 0.0, 1.0, 1.0 };
+
 float matShine[] = { 50.0 };
+float noShine[] = { 128.0 };
+float lotsShine[] = { 3.0 };
 
 
 
@@ -111,37 +134,101 @@ void getID(int x, int y)
         itemID = DOOR;
         doorClicked++;
     }
-    else {
-        itemID = 0;
+    else if ((int)pixel[0] == 255 && (int)pixel[1] == 255 && (int)pixel[2] == 255) {
+        itemID = LIGHTS;
+        lightsClicked++;
     }
+    else if ((int)pixel[0] == 0 && (int)pixel[1] == 0 && (int)pixel[2] == 255) {
+        itemID = WAND;
+    }
+    else itemID = 0;
+    
 
     selecting = false;
     glutPostRedisplay();
 }
 
 //Bitmap function for writing text to the screen
-void writeBitmapString(void* font, const char* string)
+void writeStrokeString(void* font, char* string)
 {
-    const char* c;
-
-    for (c = string; *c != '\0'; c++) glutBitmapCharacter(font, *c);
+    char* c;
+    for (c = string; *c != '\0'; c++) glutStrokeCharacter(font, *c);
 }
-
-
 
 //Collision function for checking for animation collisions
 void checkCollision() {
     
     glutPostRedisplay();
 }
+
+//Checks the house guess
+void decider()
+{
+    if (randNum == selectedNum) {
+        act = 0;
+        cout << "Your intuition has served you well student." << endl;
+    }
+    else
+    {
+        canMove = false;
+        fpZ = -43.9975;
+        fpX = 0.594656;
+        fpY = -14;
+        globAmbVal = -0.6;
+        act = 0;
+        cout << "Your intuition has failed you student, TO AZKABAN WITH YOU!!!" << endl;
+        cout << "A sense of dread washes over you..." << endl;
+        cout << "You are not alone." << endl;
+        cout << "Rotate to confront the beast!" << endl;
+    }
+}
 //--------------------------------------------------------------------------------------------------------------//
 
 
 
 //---------------------------------------------Animations-------------------------------------------------------//
+void animateWand()
+{
+    if (act == 1) {
+        if (wandAnimateY < 5) {
+            wandAnimateY += .005;
+        }
+        else {
+            act = 2;
+        }
+    }
+
+    if (act == 2) {
+        if (wandAnimateX > -5) {
+            wandAnimateX -= .0005;
+        }
+        else {
+            act = 3;
+        }
+    }
+
+    if (act == 3) {
+        if (wandAnimateX < 0) {
+            wandAnimateX += .0005;
+        }
+        else {
+            act = 2;
+        }
+    }
+}
+
+void wandAnimation(int x)
+{
+    if (wandAnimate) animateWand();
+    glutTimerFunc(100, wandAnimation, 1);
+}
+
 void animateHat()
 {
-
+    if (hatRot < 180) {
+        hatRot += .05;
+        hatHeight += .0010;
+    }
     glutPostRedisplay();
 }
 
@@ -200,65 +287,160 @@ void doorAnimation(int x)
 //---------------------------------------------Drawing Functions-----------------------------------------------//
 void drawFloorAndWalls()
 {
-    //Floor
-    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, matAmbAndDifPurple);
-    glColor3f(1.0, .5, 1.0);
-    glPushMatrix();
-    glTranslated(0, -.5, -9);
-    glScaled(40, .25, 80);
-    glutSolidCube(1);
-    glPopMatrix();
-
     //Roof
-    glColor3f(.5, 1.0, 1.0);
-    glPushMatrix();
-    glTranslated(0, 24, -20);
-    glScaled(40, .25, 80);
-    glutSolidCube(1);
-    glPopMatrix();
+    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, matAmbAndDifPurple);
+    glBegin(GL_POLYGON);
+        glNormal3f(1.0, 0.0, 0.0);
+        glVertex3f(-19.5, 24, -50);
+        glVertex3f(19.5, 24, -50);
+        glVertex3f(19.5, 24, 20);
+        glVertex3f(-19.5, 24, 20);
+    glEnd();
+
+    //Floor
+    glBegin(GL_POLYGON);
+    glNormal3f(1.0, 0.0, 0.0);
+        glVertex3f(-19.5, 0.0, -50);
+        glVertex3f(19.5, 0.0, -50);
+        glVertex3f(19.5, 0.0, 20);
+        glVertex3f(-19.5, 0.0, 20);
+    glEnd();
+    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, matAmbAndDifOrange);
+    glBegin(GL_POLYGON);
+        glNormal3f(1.0, 0.0, 0.0);
+        glVertex3f(-19.5, 0.0, 20);
+        glVertex3f(19.5, 0.0, 20);
+        glVertex3f(19.5, 0.0, 40);
+        glVertex3f(-19.5, 0.0, 40);
+    glEnd();
 
     //Left Wall
-    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, matAmbAndDifBlue);
-    glColor3f(0.0, 0.0, 1.0);
-    glPushMatrix();
-    glTranslated(-20, 6.5, -15);
-    glScaled(.25, 35, 70);
-    glutSolidCube(1);
-    glPopMatrix();
+    glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, matAmbAndDifBlue);
+    glMaterialfv(GL_BACK, GL_AMBIENT_AND_DIFFUSE, matAmbAndDifRed);
+    glShadeModel(GL_FLAT);
+    glBegin(GL_POLYGON);
+        glNormal3f(0.0, 0.0, 1.0);
+        glVertex3f(-19.5, 24, -50);
+        glVertex3f(-19.5, 24, 20);
+        glVertex3f(-19.5, -1.0, 20);
+        glVertex3f(-19.5, -1.0, -50);
+    glEnd();
+    glShadeModel(GL_SMOOTH);
 
     //Right Wall
-    glColor3f(0.0, 0.0, 1.0);
-    glPushMatrix();
-    glTranslated(20, 6.5, -15);
-    glScaled(.25, 35, 70);
-    glutSolidCube(1);
-    glPopMatrix();
+    glMaterialfv(GL_BACK, GL_AMBIENT_AND_DIFFUSE, matAmbAndDifBlue);
+    glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, matAmbAndDifRed);
+    glBegin(GL_POLYGON);
+        glNormal3f(0.0, 0.0, -1.0);
+        glVertex3f(19.5, 24, -50);
+        glVertex3f(19.5, 24, 20);
+        glVertex3f(19.5, -1.0, 20);
+        glVertex3f(19.5, -1.0, -50);
+    glEnd();
 
     //Back Wall
-    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, matAmbAndDifOrange);
-    glColor3f(1.0, 0.5, 0.0);
     glPushMatrix();
-    glTranslated(0, 14, -49);
-    glScaled(40, 70, .25);
-    glutSolidCube(1);
+    glTranslated(-20.0, 0.0, -50.0);
+    glScaled(40.0, 25.0, 25.0);
+    double n = 100.0;
+    glNormal3f(0.0, 0.0, 1.0);
+    for (int r = 0; r < n; r++)
+    {
+        if (r % 2 == 0) {
+            glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, matAmbAndDifRed);
+        }
+        else {
+            glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, matAmbAndDifBlue);
+        }
+        glBegin(GL_TRIANGLE_STRIP);
+        for (int c = 0; c <= n; c++)
+        {
+            glVertex3f(c / n, r / n, 0.0);
+            glVertex3f(c / n, (r + 1) / n, 0.0);
+        }
+        glEnd();
+    }
     glPopMatrix();
 
     //First Half of Close Wall
-    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, matAmbAndDifRed);
-    glColor3f(1.0, 0.0, 0.0);
-    glPushMatrix();
-    glTranslated(-14.5, 9, 20);
-    glScaled(11, 30, .25);
-    glutSolidCube(1);
-    glPopMatrix();
+    glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, matAmbAndDifBlue);
+    glMaterialfv(GL_BACK, GL_AMBIENT_AND_DIFFUSE, matAmbAndDifRed);
+    glBegin(GL_POLYGON);
+        glNormal3f(0.0, 1.0, 0.0);
+        glVertex3f(-19.5, 24, 20);
+        glVertex3f(-9.0, 24, 20);
+        glVertex3f(-9.0, -1.0, 20);
+        glVertex3f(-19.5, -1.0, 20);
+    glEnd();
 
     //Second Half of Close Wall
-    glColor3f(1.0, 0.0, 0.0);
-    glPushMatrix();
-    glTranslated(14.5, 9, 20);
-    glScaled(11, 30, .25);
-    glutSolidCube(1);
-    glPopMatrix();
+    glMaterialfv(GL_BACK, GL_AMBIENT_AND_DIFFUSE, matAmbAndDifBlue);
+    glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, matAmbAndDifRed);
+    glBegin(GL_POLYGON);
+        glNormal3f(0.0, -1.0, 0.0);
+        glVertex3f(19.5, 24, 20);
+        glVertex3f(9.0, 24, 20);
+        glVertex3f(9.0, -1.0, 20);
+        glVertex3f(19.5, -1.0, 20);
+    glEnd();
+}
+
+void drawDungeon() 
+{
+    //Floor
+    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, matAmbAndDifGrey);
+    glBegin(GL_POLYGON);
+    glNormal3f(1.0, 0.0, 0.0);
+    glVertex3f(-19.5, -20.0, -50);
+    glVertex3f(19.5, -20.0, -50);
+    glVertex3f(19.5, -20.0, 20);
+    glVertex3f(-19.5, -20.0, 20);
+    glEnd();
+
+    //Ceiling
+    glBegin(GL_POLYGON);
+    glNormal3f(1.0, 0.0, 0.0);
+    glVertex3f(-19.5, -3.0, -50);
+    glVertex3f(19.5, -3.0, -50);
+    glVertex3f(19.5, -3.0, 20);
+    glVertex3f(-19.5, -3.0, 20);
+    glEnd();
+
+    //Left Wall
+    glBegin(GL_POLYGON);
+    glNormal3f(0.0, 0.0, 1.0);
+    glVertex3f(-19.5, -1.0, -50);
+    glVertex3f(-19.5, -1.0, 20);
+    glVertex3f(-19.5, -20.0, 20);
+    glVertex3f(-19.5, -20.0, -50);
+    glEnd();
+
+    //Right Wall
+    glBegin(GL_POLYGON);
+    glNormal3f(0.0, 0.0, -1.0);
+    glVertex3f(19.5, -1.0, -50);
+    glVertex3f(19.5, -1.0, 20);
+    glVertex3f(19.5, -20.0, 20);
+    glVertex3f(19.5, -20.0, -50);
+    glEnd();
+
+    //Back Wall
+    glBegin(GL_POLYGON);
+    glNormal3f(0.0, -1.0, 0.0);
+    glVertex3f(-19.5, -1.0, -50);
+    glVertex3f(19.5, -1.0, -50);
+    glVertex3f(19.5, -20.0, -50);
+    glVertex3f(-19.5, -20.0, -50);
+    glEnd();
+
+    //Front Wall
+    glBegin(GL_POLYGON);
+    glNormal3f(0.0, -1.0, 0.0);
+    glVertex3f(-19.5, -1.0, 18);
+    glVertex3f(19.5, -1.0, 18);
+    glVertex3f(19.5, -20.0, 18);
+    glVertex3f(-19.5, -20.0, 18);
+    glEnd();
 }
 
 void drawLeftDoor()
@@ -567,7 +749,9 @@ void drawTable2()
 
 void drawHat()
 {
+    glMaterialfv(GL_FRONT_AND_BACK, GL_SHININESS, noShine);
     glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, matAmbAndDifBlue);
+    glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, matSpecBlue);
     glPushMatrix();
     glTranslated(-7, 3.5, -47);
     glRotated(90, 1, 0, 0);
@@ -575,29 +759,42 @@ void drawHat()
     glutSolidTorus(.25, 1.5, 20, 20);
     glPopMatrix();
 
-    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, matAmbAndDifBlue);
     glPushMatrix();
-    glTranslated(-7, 3, -47);
+    glTranslated(-7, 3.5, -47);
     glRotated(-90, 1, 0, 0);
     glScaled(1, 1, 1);
     glutSolidCone(1.5, 4, 20, 20);
     glPopMatrix();
 
+    glMaterialfv(GL_FRONT_AND_BACK, GL_SHININESS, lotsShine);
     glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, matAmbAndDifYellow);
+    glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, matSpec);
     glPushMatrix();
-    glTranslated(-7, 7, -47);
+    glTranslated(-7, 7.5, -47);
     glutSolidSphere(.3, 25, 25);
     glPopMatrix();
+    glMaterialfv(GL_FRONT_AND_BACK, GL_SHININESS, matShine);
 }
 
 void drawWand()
 {
-    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, matAmbAndDifGreen);
+    if (wandAnimate) {
+        float wandEmiss[] = { 0.0, 0.9, 0.0, 1.0 };
+        glMaterialfv(GL_FRONT_AND_BACK, GL_EMISSION, wandEmiss);
+    }
+    else
+    {
+        glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, matAmbAndDifGreen);
+    }
+    
+    glColor3f(0.0, 0.0, 1.0);
     glPushMatrix();
     glTranslated(-3, 3.5, -46);
     glScaled(.15, .15, 1.5);
     glutSolidCube(1);
     glPopMatrix();
+
+    glMaterialfv(GL_FRONT_AND_BACK, GL_EMISSION, noEmiss);
 }
 
 void drawFlashlight()
@@ -622,7 +819,13 @@ void drawFlashlight()
 
 void drawLights()
 {
-    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, matAmbAndDifYellow);
+    if (lightsOn) {
+        glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, matAmbAndDifYellow);
+    }
+    else {
+        glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, matAmbAndDifDarkGrey);
+    }
+    
     glColor3f(0.0, 0.0, 0.0);
     glPushMatrix();
     glTranslated(0, 25, -15);
@@ -630,19 +833,7 @@ void drawLights()
     glutSolidSphere(3, 25, 25);
     glPopMatrix();
 
-    glColor3f(0.0, 0.0, 0.0);
-    glPushMatrix();
-    glTranslated(0, 25, 0);
-    glScaled(1, 1, 1);
-    glutSolidSphere(3, 25, 25);
-    glPopMatrix();
-
-    glColor3f(0.0, 0.0, 0.0);
-    glPushMatrix();
-    glTranslated(0, 25, -30);
-    glScaled(1, 1, 1);
-    glutSolidSphere(3, 25, 25);
-    glPopMatrix();
+    
 }
 
 void drawPillers()
@@ -797,6 +988,8 @@ void drawSpider()
 {
     //Body
     glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, matAmbAndDifDarkGrey);
+    glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, matAmbAndDifDarkGrey);
+    glMaterialfv(GL_FRONT_AND_BACK, GL_SHININESS, noShine);
     glPushMatrix();
     glTranslated(-14, 5, -10);
     glScaled(1.5, 1, 1);
@@ -805,6 +998,7 @@ void drawSpider()
 
     //Head
     glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, matAmbAndDifGrey);
+    glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, matAmbAndDifGrey);
     glPushMatrix();
     glTranslated(-8, 5, -10);
     glScaled(1.5, .7, 1.0);
@@ -813,6 +1007,7 @@ void drawSpider()
 
     //Left legs
     glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, matAmbAndDifDarkGrey);
+    glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, matAmbAndDifDarkGrey);
     drawSpiderLegs1();
     drawSpiderLegs2();
     drawSpiderLegs3();
@@ -848,18 +1043,69 @@ void drawSpider()
     glPopMatrix();
 
     //Left eye
-    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, matAmbAndDifRed);
+    float eyeEmiss[] = { 0.9, 0.0, 0.0, 1.0 };
+    glMaterialfv(GL_FRONT, GL_EMISSION, eyeEmiss);
     glPushMatrix();
     glTranslated(-5.2, 5.2, -9.45);
     glutSolidSphere(.20, 25, 25);
     glPopMatrix();
+    
 
     //Right eye
-    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, matAmbAndDifRed);
     glPushMatrix();
     glTranslated(-5.2, 5.2, -10.45);
     glutSolidSphere(.20, 25, 25);
     glPopMatrix();
+    glMaterialfv(GL_FRONT, GL_EMISSION, noEmiss);
+    glMaterialfv(GL_FRONT_AND_BACK, GL_SHININESS, matShine);
+}
+
+void drawSmiley()
+{
+    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, matAmbAndDifYellow);
+    glPushMatrix();
+    glTranslated(-15, 17, 12);
+    glutSolidSphere(4, 25, 25);
+    glPopMatrix();
+
+    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, matAmbAndDifBlack);
+    glPushMatrix();
+    glTranslated(-11, 17, 11);
+    glutSolidSphere(.5, 25, 25);
+    glPopMatrix();
+
+    glPushMatrix();
+    glTranslated(-11, 17, 13);
+    glutSolidSphere(.5, 25, 25);
+    glPopMatrix();
+
+    glBegin(GL_POLYGON);
+        glNormal3f(0.0, 0.0, 1.0);
+        glVertex3f(-11, 15, 10);
+        glVertex3f(-11, 13, 12);
+        glVertex3f(-11, 15, 14);
+        glVertex3f(-11, 14, 12);
+    glEnd();
+}
+
+void drawText()
+{
+    glPushMatrix();
+    glColor3f(1.0, 1.0, 1.0);
+    glTranslatef(-17, 10.0, -47);
+    glScalef(0.004, 0.004, 0.004);
+    char text[] = "Guess a House: (G) Gryffindor, (H) Hufflepuff, (R) Ravenclaw, (S) Slytherin";
+    writeStrokeString(GLUT_STROKE_ROMAN, text);
+    glPopMatrix();
+
+    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, matAmbAndDifWhite);
+    glBegin(GL_POLYGON);
+    glNormal3f(0.0, -1.0, 0.0);
+    glVertex3f(-19.5, 12.0, -48);
+    glVertex3f(4.5, 12.0, -48);
+    glVertex3f(4.5, 10.0, -48);
+    glVertex3f(-19.5, 10.0, -48);
+    glEnd();
 }
 
 void drawItems()
@@ -871,27 +1117,72 @@ void drawItems()
     drawPillers();
     drawTable();
     drawTable2();
+    
+    glPushMatrix();
+    glTranslated(-7, 4, -47);
+    glTranslated(0.0, hatHeight, 0.0);
+    glRotated(hatRot, 1, 0, 0);
+    glTranslated(7, -4, 47);
     drawHat();
+    glPopMatrix();
+
+    glPushMatrix();
+    glTranslated(-3, 3.5, -46);
+    glTranslated(wandAnimateX, wandAnimateY, 0.0);
+    glTranslated(3, -3.5, 46);
     drawWand();
+    glPopMatrix();
+
+    
     drawFlashlight();
+    drawLights();
 
     glPushMatrix();
     glRotated(-10, 0, 1, 0);
     drawSpider();
     glPopMatrix();
-    
 
-    drawLights();
+    glPushMatrix();
+    glScaled(2.0, 2.0, 2.0);
+    glTranslated(10.0, -10.0, -10.0);
+    glRotated(90, 0, 1, 0);
+    drawSpider();
+    glPopMatrix();
+
+    drawSmiley();
+    drawDungeon();
+    
+    
     if (itemID == DOOR && doorClicked == 1) {
         doorOpen = true;
     }
-
     if (itemID == DOOR && doorClicked == 2) {
         doorClicked = 0;
         doorOpen = false;
     }
+    if (itemID == LIGHTS && lightsClicked == 1) {
+        lightsOn = true;
+        glEnable(GL_LIGHT1);
+    }
+    if (itemID == LIGHTS && lightsClicked == 2) {
+        lightsClicked = 0;
+        lightsOn = false;
+        glDisable(GL_LIGHT1);
+    }
+    if (itemID == WAND) {
+        wandAnimate = true;
+        hatAnimate = true;
+        drawText();
+    }
     doorAnimation(1);
+    hatAnimation(1);
+    wandAnimation(1);
+
+    
+    
 }
+
+
 
 //Drawing to Screen Function
 void drawScene()
@@ -901,14 +1192,16 @@ void drawScene()
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
 
+    //Global light
+    float globAmb[] = { globAmbVal, globAmbVal, globAmbVal, 1.0 };
+    glLightModelfv(GL_LIGHT_MODEL_AMBIENT, globAmb); 
     glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, matSpec);
     glMaterialfv(GL_FRONT_AND_BACK, GL_SHININESS, matShine);
 
     //View
-    gluLookAt(fpX, 5, fpZ,
-        fpX + sin(degrees * PI/180), 5, fpZ + cos(degrees * PI / 180),
+    gluLookAt(fpX, fpY, fpZ,
+        fpX + sin(degrees * PI/180), fpY, fpZ + cos(degrees * PI / 180),
         0, 1, 0);
-    
 
     if (selecting) {
         glDisable(GL_LIGHTING);
@@ -928,46 +1221,60 @@ void drawScene()
 
 
 //---------------------------------------------Setup Functions-------------------------------------------------//
-static float normals[] =
-{
-    ONE_BY_ROOT_THREE, -ONE_BY_ROOT_THREE, ONE_BY_ROOT_THREE,
-    ONE_BY_ROOT_THREE, ONE_BY_ROOT_THREE, ONE_BY_ROOT_THREE,
-    ONE_BY_ROOT_THREE, ONE_BY_ROOT_THREE, -ONE_BY_ROOT_THREE,
-    ONE_BY_ROOT_THREE, -ONE_BY_ROOT_THREE, -ONE_BY_ROOT_THREE,
-    -ONE_BY_ROOT_THREE, -ONE_BY_ROOT_THREE, ONE_BY_ROOT_THREE,
-    -ONE_BY_ROOT_THREE, ONE_BY_ROOT_THREE, ONE_BY_ROOT_THREE,
-    -ONE_BY_ROOT_THREE, ONE_BY_ROOT_THREE, -ONE_BY_ROOT_THREE,
-    -ONE_BY_ROOT_THREE, -ONE_BY_ROOT_THREE, -ONE_BY_ROOT_THREE
-};
 
 //Setup Screen Function
 void setup(void)
 {
     glClearColor(0.1843137254901960784313725490196, 0.16862745098039215686274509803922, 0.18823529411764705882352941176471, 0.0);
     glEnable(GL_DEPTH_TEST);
+    srand(time(0));
+    randNum = rand() % 4;
+    cout << "*============================================================*" << endl;
+    cout << "*==========================Cheat Code========================*" << endl;
+    cout << "*Random Number is: " << randNum << "                                         *" << endl;
+    cout << "*Gryffindor: 0 | Hufflepuff: 1 | Ravenclaw: 2 | Slytherin: 3 *" << endl;
+    cout << "*============================================================*" << endl;
+    cout << "*============================================================*" << endl;
 
     //Master lighting
     glEnable(GL_LIGHTING);
-
     glEnable(GL_NORMALIZE);
+    glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, GL_TRUE);
+    glLightModeli(GL_LIGHT_MODEL_LOCAL_VIEWER, GL_TRUE);
 
-    float lightAmb[] = { 0.0, 0.0, 0.0, 1.0 };
-    float lightDifAndSpec[] = { 1.0, 1.0, 1.0, 1.0 };
-    float lightPos[] = { 0.0, 1.5, 3.0, 1.0 };
-    float globAmb[] = { 0.0, 0.0, 0.0, 1.0 };
+    //Light0 - Main ambiant light
+    float lightAmb0[] = { 0.0, 0.0, 0.0, 1.0 };
+    float lightDifAndSpec0[] = { 1.0, 1.0, 1.0, 1.0 };
+    float lightPos0[] = { 0.0, 1.5, 3.0, 1.0 };
+    glLightfv(GL_LIGHT0, GL_AMBIENT, lightAmb0);
+    glLightfv(GL_LIGHT0, GL_DIFFUSE, lightDifAndSpec0);
+    glLightfv(GL_LIGHT0, GL_SPECULAR, lightDifAndSpec0);
+    glLightfv(GL_LIGHT0, GL_POSITION, lightPos0);
+    glEnable(GL_LIGHT0);
 
-    glLightfv(GL_LIGHT0, GL_AMBIENT, lightAmb);
-    glLightfv(GL_LIGHT0, GL_DIFFUSE, lightDifAndSpec);
-    glLightfv(GL_LIGHT0, GL_SPECULAR, lightDifAndSpec);
-    glLightfv(GL_LIGHT0, GL_POSITION, lightPos);
+    //Light1 - Roof light
+    float lightAmb1[] = { 0.3, 0.3, 0.3, 1.0 };
+    float lightDifAndSpec1[] = { 1.0, 1.0, 1.0, 1.0 };
+    float lightPos1[] = { 0, 25, -15, 1.0 };
+    glLightfv(GL_LIGHT1, GL_AMBIENT, lightAmb1);
+    glLightfv(GL_LIGHT1, GL_DIFFUSE, lightDifAndSpec1);
+    glLightfv(GL_LIGHT1, GL_SPECULAR, lightDifAndSpec1);
+    glLightfv(GL_LIGHT1, GL_POSITION, lightPos1);
 
-    glEnable(GL_LIGHT0); // Enable particular light source.
-    glLightModelfv(GL_LIGHT_MODEL_AMBIENT, globAmb); // Global ambient light.
-    glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, GL_TRUE); // Enable two-sided lighting.
-    glLightModeli(GL_LIGHT_MODEL_LOCAL_VIEWER, GL_TRUE); // Enable local viewpoint
-
-    glEnableClientState(GL_NORMAL_ARRAY);
-    glNormalPointer(GL_FLOAT, 0, normals);
+    //Light2 - Flashlight spotlight
+    float spotDirection[] = { 1.0, 0.0, 0.0 };
+    float spotAngle = 12.5;
+    float spotExponent = 2.0;
+    float lightAmb2[] = { 0.9, 0.0, 0.0, 1.0 };
+    float lightDifAndSpec2[] = { 1.0, 1.0, 1.0, 1.0 };
+    float lightPos2[] = { 16.0, 3.5, -44.0, 1.0 };
+    glLightfv(GL_LIGHT2, GL_AMBIENT, lightAmb2);
+    glLightfv(GL_LIGHT2, GL_DIFFUSE, lightDifAndSpec2);
+    glLightfv(GL_LIGHT2, GL_SPECULAR, lightDifAndSpec2);
+    glLightfv(GL_LIGHT2, GL_POSITION, lightPos2);
+    glLightf(GL_LIGHT2, GL_SPOT_CUTOFF, spotAngle);
+    glLightfv(GL_LIGHT2, GL_SPOT_DIRECTION, spotDirection);
+    glLightf(GL_LIGHT2, GL_SPOT_EXPONENT, spotExponent);
 }
 
 //Resize Screen Function
@@ -993,11 +1300,29 @@ void keyInput(unsigned char key, int x, int y)
         break;
 
     case 'l':
-        lightsOn = !lightsOn;
+        if (lightsOn) {
+            lightsOn = false;
+            lightsClicked = 0;
+            glDisable(GL_LIGHT1);
+        }
+        else {
+            lightsOn = true;
+            lightsClicked++;
+            glEnable(GL_LIGHT1);
+        }
         break;
 
     case 's':
-        spotlightOn = !spotlightOn;
+        if (spotlightOn) {
+            spotlightOn = false;
+            cout << "Flashlight On" << endl;
+            glDisable(GL_LIGHT2);
+        }
+        else {
+            spotlightOn = true;
+            cout << "Flashlight Off" << endl;
+            glEnable(GL_LIGHT2);
+        }
         break;
 
     case 'f':
@@ -1005,12 +1330,57 @@ void keyInput(unsigned char key, int x, int y)
         break;
 
     case 'w':
-        wandAnimate = !wandAnimate;
+        itemID = WAND;
+        break;
+
+    case '>':
+        globAmbVal += 0.1;
+        cout << "Increase global ambient light" << endl;
+        cout << "Global Ambient Light: " << globAmbVal << endl;
+        break;
+
+    case '<':
+        globAmbVal -= 0.1;
+        cout << "Decrease global ambient light" << endl;
+        cout << "Global Ambient Light: " << globAmbVal << endl;
+        break;
+
+    case 'q':
+        fpY -= stepsize;
+        break;
+
+    case 'e':
+        fpY += stepsize;
+        break;
+
+    case 'G':
+        selectedNum = 0;
+        wandAnimate = false;
+        decider();
+        break;
+
+    case 'H':
+        selectedNum = 1;
+        wandAnimate = false;
+        decider();
+        break;
+
+    case 'R':
+        selectedNum = 2;
+        wandAnimate = false;
+        decider();
+        break;
+
+    case 'S':
+        selectedNum = 3;
+        wandAnimate = false;
+        decider();
         break;
 
     default:
         break;
     }
+    glutPostRedisplay();
 }
 
 void keyInputSpecial(int key, int x, int y)
@@ -1019,27 +1389,29 @@ void keyInputSpecial(int key, int x, int y)
     {
 
     case GLUT_KEY_DOWN:
-        fpX -= stepsize * sin(degrees * PI / 180);
-        fpZ -= stepsize * cos(degrees * PI / 180);
-        cout << "First Person Z-Coordinate: " << fpZ << endl;
-        glutPostRedisplay();
+        if (canMove) {
+            fpX -= stepsize * sin(degrees * PI / 180);
+            fpZ -= stepsize * cos(degrees * PI / 180);
+            cout << "First Person Z-Coordinate: " << fpZ << endl;
+            cout << "First Person X-Coordinate: " << fpX << endl;
+        }
         break;
 
     case GLUT_KEY_UP:
-        fpX += stepsize * sin(degrees * PI / 180);
-        fpZ += stepsize * cos(degrees * PI / 180);
-        cout << "First Person Z-Coordinate: " << fpZ << endl;
-        glutPostRedisplay();
+        if (canMove) {
+            fpX += stepsize * sin(degrees * PI / 180);
+            fpZ += stepsize * cos(degrees * PI / 180);
+            cout << "First Person Z-Coordinate: " << fpZ << endl;
+            cout << "First Person X-Coordinate: " << fpX << endl;
+        }
         break;
 
     case GLUT_KEY_RIGHT:
         degrees -= rotsize;
-        glutPostRedisplay();
         break;
 
     case GLUT_KEY_LEFT:
         degrees += rotsize;
-        glutPostRedisplay();
         break;
 
     default:
