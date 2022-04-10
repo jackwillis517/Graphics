@@ -12,7 +12,8 @@
 *
 * Date submitted:  April 11, 2022
 *
-* References: None
+* References: 
+* https://www.frankslide.com/what-harry-potter-spell-freezes-things/
 *
 * Interactions:
 *******************************************/
@@ -21,6 +22,7 @@
 #include <iostream>
 #include <random>
 #include <ctime>
+#include<cmath>
 
 #ifdef __APPLE__
 #  include <GLUT/glut.h>
@@ -34,6 +36,14 @@ using namespace std;
 static int PI = 3.14159;
 static int randNum;
 static int selectedNum;
+static bool red = false;
+static bool blue = false;
+static bool purple = false;
+static bool green = false;
+static float snitchX = -10;
+static float snitchY = 4;
+static float snitchZ = -46;
+static bool giveSnitch = false;
 
 //Color picking globals
 static int DOOR = 1;
@@ -47,18 +57,25 @@ static bool selecting = false;
 //Light globals
 static bool lightsOn = false;
 static bool spotlightOn = false;
-static bool flashlightOn = false;
+static bool flashlightFollow = false;
 static int lightsClicked = 0;
 static float globAmbVal = 0.0;
+static float flashLightX = 16;
+static float flashLightY = 3.5;
+static float flashLightZ = -44;
 
 //Animation globals
 static bool hatAnimate = false;
 static bool wandAnimate = false;
 static bool doorOpen = false;
+static bool spiderAnimate = false;
+static bool freezeSpider = false;
 static float hatRot = 0.0;
 static float hatHeight = 0.0;
 static float wandAnimateX = 0.0;
 static float wandAnimateY = 0.0;
+static float wandAnimateZ = 0.0;
+static float spiderZ = -10;
 static int act = 1;
 
 //First person movement globals
@@ -96,12 +113,16 @@ float matAmbAndDifBlue[] = { 0.0, 0.0, 0.9, 1.0 };
 float matAmbAndDifOrange[] = { 0.9, 0.5, 0.0, 1.0 };
 //Purple
 float matAmbAndDifPurple[] = { 0.9, 0.5, 0.9, 1.0 };
+//Dark Purple
+float matAmbAndDifDarkPurple[] = { 0.9, 0.2, 0.9, 1.0 };
 //Dark Gray
 float matAmbAndDifDarkGrey[] = { 0.1, 0.1, 0.1, 1.0 };
 //Gray
 float matAmbAndDifGrey[] = { 0.4, 0.4, 0.4, 1.0 };
 //Yellow
 float matAmbAndDifYellow[] = { 0.9, 0.9, 0.0, 1.0 };
+//Brown
+float matAmbAndDifBrown[] = { 0.2, 0.1, 0.1, 1.0 };
 //Material globals
 float noEmiss[] = { 0.0, 0.0, 0.0, 1.0 };
 
@@ -157,16 +178,53 @@ void writeStrokeString(void* font, char* string)
 
 //Collision function for checking for animation collisions
 void checkCollision() {
-    
+    if (fpX >= 11 && fpX <= 13 && fpZ <= -40 && fpZ >= -48) {
+        flashlightFollow = true;
+        glEnable(GL_LIGHT2);
+    }
     glutPostRedisplay();
 }
+
+
 
 //Checks the house guess
 void decider()
 {
-    if (randNum == selectedNum) {
+    if (randNum == selectedNum && randNum == 0) {
         act = 0;
+        red = true;
+        giveSnitch = true;
         cout << "Your intuition has served you well student." << endl;
+        cout << "5 points to Gryffindor!" << endl;
+        cout << "A snitch has been given to you." << endl;
+        glutPostRedisplay();
+    }
+    else if (randNum == selectedNum && randNum == 1) {
+        act = 0;
+        blue = true;
+        giveSnitch = true;
+        cout << "Your intuition has served you well student." << endl;
+        cout << "5 points to Hufflepuff!" << endl;
+        cout << "A snitch has been given to you." << endl;
+        glutPostRedisplay();
+    }
+    else if (randNum == selectedNum && randNum == 2) {
+        act = 0;
+        purple = true;
+        giveSnitch = true;
+        cout << "Your intuition has served you well student." << endl;
+        cout << "5 points to Ravenclaw!" << endl;
+        cout << "A snitch has been given to you." << endl;
+        glutPostRedisplay();
+    }
+    else if (randNum == selectedNum && randNum == 3) {
+        act = 0;
+        green = true;
+        giveSnitch = true;
+        cout << "Your intuition has served you well student." << endl;
+        cout << "5 points to Slytherin!" << endl;
+        cout << "A snitch has been given to you." << endl;
+        glutPostRedisplay();
     }
     else
     {
@@ -175,11 +233,14 @@ void decider()
         fpX = 0.594656;
         fpY = -14;
         globAmbVal = -0.6;
+        glDisable(GL_LIGHT1);
         act = 0;
+        spiderAnimate = true;
         cout << "Your intuition has failed you student, TO AZKABAN WITH YOU!!!" << endl;
         cout << "A sense of dread washes over you..." << endl;
         cout << "You are not alone." << endl;
         cout << "Rotate to confront the beast!" << endl;
+        cout << "Quick cast Petrificus Totalus (p) to stop the arachnid!" << endl;
     }
 }
 //--------------------------------------------------------------------------------------------------------------//
@@ -187,6 +248,23 @@ void decider()
 
 
 //---------------------------------------------Animations-------------------------------------------------------//
+void animateSpider()
+{
+    if (spiderZ > -25) {
+        spiderZ -= .00006;
+    }
+}
+
+void spiderAnimation(int x)
+{
+    if (!freezeSpider)
+    {
+        if (spiderAnimate) animateSpider();
+        glutTimerFunc(100, spiderAnimation, 1);
+    }
+    
+}
+
 void animateWand()
 {
     if (act == 1) {
@@ -799,22 +877,22 @@ void drawWand()
 
 void drawFlashlight()
 {
-    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, matAmbAndDifGreen);
-    glColor3f(0.0, 1.0, 0.0);
-    glPushMatrix();
-    glTranslated(16, 3.5, -44);
-    glRotated(90, 0, 1, 0);
-    glScaled(.35, .35, 2);
-    glutSolidCube(1);
-    glPopMatrix();
+        glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, matAmbAndDifGreen);
+        glColor3f(0.0, 1.0, 0.0);
+        glPushMatrix();
+        glTranslated(flashLightX, flashLightY, flashLightZ);
+        glRotated(180, 0, 1, 0);
+        glScaled(.35, .35, 2);
+        glutSolidCube(1);
+        glPopMatrix();
 
-    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, matAmbAndDifRed);
-    glColor3f(1.0, 0.0, 0.0);
-    glPushMatrix();
-    glTranslated(15, 3.5, -44);
-    glScaled(.5, .5, .5);
-    glutSolidCube(1);
-    glPopMatrix();
+        glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, matAmbAndDifRed);
+        glColor3f(1.0, 0.0, 0.0);
+        glPushMatrix();
+        glTranslated(flashLightX, flashLightY, flashLightZ + 1);
+        glScaled(.5, .5, .5);
+        glutSolidCube(1);
+        glPopMatrix();
 }
 
 void drawLights()
@@ -987,6 +1065,105 @@ void drawSpiderLegs4()
 void drawSpider()
 {
     //Body
+    if (freezeSpider)
+    {
+        glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, matAmbAndDifBlue);
+        glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, matAmbAndDifBlue);
+    }
+    else {
+        glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, matAmbAndDifDarkGrey);
+        glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, matAmbAndDifDarkGrey);
+    }
+    glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, matAmbAndDifDarkGrey);
+    glMaterialfv(GL_FRONT_AND_BACK, GL_SHININESS, noShine);
+    glPushMatrix();
+    glTranslated(-14, 5, -10);
+    glScaled(1.5, 1, 1);
+    glutSolidSphere(3.5, 25, 25);
+    glPopMatrix();
+
+    //Head
+    if (freezeSpider)
+    {
+        glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, matAmbAndDifBlue);
+        glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, matAmbAndDifBlue);
+    }
+    else {
+        glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, matAmbAndDifGrey);
+        glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, matAmbAndDifGrey);
+    }
+    glPushMatrix();
+    glTranslated(-8, 5, -10);
+    glScaled(1.5, .7, 1.0);
+    glutSolidSphere(2, 25, 25);
+    glPopMatrix();
+
+    //Left legs
+    if (freezeSpider)
+    {
+        glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, matAmbAndDifBlue);
+        glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, matAmbAndDifBlue);
+    }
+    else {
+        glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, matAmbAndDifDarkGrey);
+        glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, matAmbAndDifDarkGrey);
+    }
+    
+    drawSpiderLegs1();
+    drawSpiderLegs2();
+    drawSpiderLegs3();
+    drawSpiderLegs4();
+
+    //Right legs
+    glPushMatrix();
+    glTranslated(-32, 0, -20);
+    glRotated(-180, 0, 0, 1);
+    glRotated(180, 1, 0, 0);
+    drawSpiderLegs1();
+    glPopMatrix();
+
+    glPushMatrix();
+    glTranslated(-28, 0, -20);
+    glRotated(-180, 0, 0, 1);
+    glRotated(180, 1, 0, 0);
+    drawSpiderLegs2();
+    glPopMatrix();
+
+    glPushMatrix();
+    glTranslated(-24, 0, -20);
+    glRotated(-180, 0, 0, 1);
+    glRotated(180, 1, 0, 0);
+    drawSpiderLegs3();
+    glPopMatrix();
+
+    glPushMatrix();
+    glTranslated(-20, 0, -20);
+    glRotated(-180, 0, 0, 1);
+    glRotated(180, 1, 0, 0);
+    drawSpiderLegs4();
+    glPopMatrix();
+
+    //Left eye
+    float eyeEmiss[] = { 0.9, 0.0, 0.0, 1.0 };
+    glMaterialfv(GL_FRONT, GL_EMISSION, eyeEmiss);
+    glPushMatrix();
+    glTranslated(-5.2, 5.2, -9.45);
+    glutSolidSphere(.20, 25, 25);
+    glPopMatrix();
+    
+
+    //Right eye
+    glPushMatrix();
+    glTranslated(-5.2, 5.2, -10.45);
+    glutSolidSphere(.20, 25, 25);
+    glPopMatrix();
+    glMaterialfv(GL_FRONT, GL_EMISSION, noEmiss);
+    glMaterialfv(GL_FRONT_AND_BACK, GL_SHININESS, matShine);
+}
+
+void drawSpider2()
+{
+    //Body
     glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, matAmbAndDifDarkGrey);
     glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, matAmbAndDifDarkGrey);
     glMaterialfv(GL_FRONT_AND_BACK, GL_SHININESS, noShine);
@@ -1049,7 +1226,7 @@ void drawSpider()
     glTranslated(-5.2, 5.2, -9.45);
     glutSolidSphere(.20, 25, 25);
     glPopMatrix();
-    
+
 
     //Right eye
     glPushMatrix();
@@ -1108,6 +1285,227 @@ void drawText()
     glEnd();
 }
 
+void drawBroomstick()
+{
+    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, matAmbAndDifBrown);
+    glColor3f(0.0, 0.0, 0.0);
+    glPushMatrix();
+    glTranslated(0, 12, -20);
+    glScaled(10, .25, .25);
+    glutSolidCube(1);
+    glPopMatrix();
+
+    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, matAmbAndDifYellow);
+    glColor3f(0.0, 0.0, 0.0);
+    glPushMatrix();
+    glTranslated(5, 12, -20);
+    glScaled(3, .05, .05);
+    glutSolidCube(1);
+    glPopMatrix();
+
+    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, matAmbAndDifYellow);
+    glColor3f(0.0, 0.0, 0.0);
+    glPushMatrix();
+    glTranslated(5.65, 11.45, -20);
+    glRotated(-25, 0, 0, 1);
+    glScaled(1.5, .05, .05);
+    glutSolidCube(1);
+    glPopMatrix();
+
+    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, matAmbAndDifYellow);
+    glColor3f(0.0, 0.0, 0.0);
+    glPushMatrix();
+    glTranslated(5.65, 11.7, -20);
+    glRotated(-15, 0, 0, 1);
+    glScaled(1.5, .05, .05);
+    glutSolidCube(1);
+    glPopMatrix();
+
+    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, matAmbAndDifYellow);
+    glColor3f(0.0, 0.0, 0.0);
+    glPushMatrix();
+    glTranslated(5.65, 12.15, -20);
+    glRotated(15, 0, 0, 1);
+    glScaled(1.5, .05, .05);
+    glutSolidCube(1);
+    glPopMatrix();
+
+    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, matAmbAndDifYellow);
+    glColor3f(0.0, 0.0, 0.0);
+    glPushMatrix();
+    glTranslated(5.65, 12.45, -20);
+    glRotated(25, 0, 0, 1);
+    glScaled(1.5, .05, .05);
+    glutSolidCube(1);
+    glPopMatrix();
+
+    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, matAmbAndDifYellow);
+    glColor3f(0.0, 0.0, 0.0);
+    glPushMatrix();
+    glTranslated(5.65, 11.45, -19.5);
+    glRotated(-25, 0, 1, 0);
+    glRotated(-25, 0, 0, 1);
+    glScaled(1.5, .05, .05);
+    glutSolidCube(1);
+    glPopMatrix();
+
+    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, matAmbAndDifYellow);
+    glColor3f(0.0, 0.0, 0.0);
+    glPushMatrix();
+    glTranslated(5.65, 11.7, -19.5);
+    glRotated(-25, 0, 1, 0);
+    glRotated(-15, 0, 0, 1);
+    glScaled(1.5, .05, .05);
+    glutSolidCube(1);
+    glPopMatrix();
+
+    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, matAmbAndDifYellow);
+    glColor3f(0.0, 0.0, 0.0);
+    glPushMatrix();
+    glTranslated(5.65, 12.15, -19.5);
+    glRotated(-25, 0, 1, 0);
+    glRotated(15, 0, 0, 1);
+    glScaled(1.5, .05, .05);
+    glutSolidCube(1);
+    glPopMatrix();
+
+    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, matAmbAndDifYellow);
+    glColor3f(0.0, 0.0, 0.0);
+    glPushMatrix();
+    glTranslated(5.65, 12.45, -19.5);
+    glRotated(-25, 0, 1, 0);
+    glRotated(25, 0, 0, 1);
+    glScaled(1.5, .05, .05);
+    glutSolidCube(1);
+    glPopMatrix();
+
+    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, matAmbAndDifYellow);
+    glColor3f(0.0, 0.0, 0.0);
+    glPushMatrix();
+    glTranslated(5.65, 11.45, -20.5);
+    glRotated(25, 0, 1, 0);
+    glRotated(-25, 0, 0, 1);
+    glScaled(1.5, .05, .05);
+    glutSolidCube(1);
+    glPopMatrix();
+
+    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, matAmbAndDifYellow);
+    glColor3f(0.0, 0.0, 0.0);
+    glPushMatrix();
+    glTranslated(5.65, 11.7, -20.5);
+    glRotated(25, 0, 1, 0);
+    glRotated(-15, 0, 0, 1);
+    glScaled(1.5, .05, .05);
+    glutSolidCube(1);
+    glPopMatrix();
+
+    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, matAmbAndDifYellow);
+    glColor3f(0.0, 0.0, 0.0);
+    glPushMatrix();
+    glTranslated(5.65, 12.15, -20.5);
+    glRotated(25, 0, 1, 0);
+    glRotated(15, 0, 0, 1);
+    glScaled(1.5, .05, .05);
+    glutSolidCube(1);
+    glPopMatrix();
+
+    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, matAmbAndDifYellow);
+    glColor3f(0.0, 0.0, 0.0);
+    glPushMatrix();
+    glTranslated(5.65, 12.45, -20.5);
+    glRotated(25, 0, 1, 0);
+    glRotated(25, 0, 0, 1);
+    glScaled(1.5, .05, .05);
+    glutSolidCube(1);
+    glPopMatrix();
+
+    
+}
+
+void drawPurpleCube()
+{
+    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, matAmbAndDifDarkPurple);
+    glPushMatrix();
+    glTranslated(8.5, .5, -48);
+    glutSolidCube(1);
+    glPopMatrix();
+}
+
+void drawRedCube()
+{
+    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, matAmbAndDifRed);
+    glPushMatrix();
+    glTranslated(4, .5, -48);
+    glutSolidCube(1);
+    glPopMatrix();
+}
+
+void drawBlueCube()
+{
+    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, matAmbAndDifBlue);
+    glPushMatrix();
+    glTranslated(5.5, .5, -48);
+    glutSolidCube(1);
+    glPopMatrix();
+}
+
+void drawGreenCube()
+{
+    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, matAmbAndDifGreen);
+    glPushMatrix();
+    glTranslated(7, .5, -48);
+    glutSolidCube(1);
+    glPopMatrix();
+}
+
+void drawPurpleCube2()
+{
+    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, matAmbAndDifDarkPurple);
+    glPushMatrix();
+    glTranslated(8.5, 1.5, -48);
+    glutSolidCube(1);
+    glPopMatrix();
+}
+
+void drawRedCube2()
+{
+    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, matAmbAndDifRed);
+    glPushMatrix();
+    glTranslated(4, 1.5, -48);
+    glutSolidCube(1);
+    glPopMatrix();
+}
+
+void drawBlueCube2()
+{
+    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, matAmbAndDifBlue);
+    glPushMatrix();
+    glTranslated(5.5, 1.5, -48);
+    glutSolidCube(1);
+    glPopMatrix();
+}
+
+void drawGreenCube2()
+{
+    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, matAmbAndDifGreen);
+    glPushMatrix();
+    glTranslated(7, 1.5, -48);
+    glutSolidCube(1);
+    glPopMatrix();
+}
+
+void drawSnitch()
+{
+    glMaterialfv(GL_FRONT_AND_BACK, GL_SHININESS, lotsShine);
+    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, matAmbAndDifYellow);
+    glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, matSpec);
+    glPushMatrix();
+    glTranslated(snitchX, snitchY, snitchZ);
+    glutSolidSphere(.2, 25, 25);
+    glPopMatrix();
+    glMaterialfv(GL_FRONT_AND_BACK, GL_SHININESS, matShine);
+}
+
 void drawItems()
 {
     drawFloorAndWalls();
@@ -1128,13 +1526,11 @@ void drawItems()
 
     glPushMatrix();
     glTranslated(-3, 3.5, -46);
-    glTranslated(wandAnimateX, wandAnimateY, 0.0);
+    glTranslated(wandAnimateX, wandAnimateY, wandAnimateZ);
     glTranslated(3, -3.5, 46);
     drawWand();
     glPopMatrix();
 
-    
-    drawFlashlight();
     drawLights();
 
     glPushMatrix();
@@ -1144,15 +1540,31 @@ void drawItems()
 
     glPushMatrix();
     glScaled(2.0, 2.0, 2.0);
-    glTranslated(10.0, -10.0, -10.0);
+    glTranslated(10.0, -10.0, spiderZ);
     glRotated(90, 0, 1, 0);
     drawSpider();
     glPopMatrix();
 
     drawSmiley();
     drawDungeon();
-    
-    
+
+    glPushMatrix();
+    glTranslated(-5.0, 0.0, -10.0);
+    glRotated(-90, 0, 1, 0);
+    drawBroomstick();
+    glPopMatrix();
+
+    drawRedCube();
+    drawBlueCube(); 
+    drawPurpleCube();
+    drawGreenCube();
+
+    if (red) drawRedCube2();
+    if (blue) drawBlueCube2();
+    if (purple) drawPurpleCube2();
+    if (green) drawGreenCube2();
+
+
     if (itemID == DOOR && doorClicked == 1) {
         doorOpen = true;
     }
@@ -1174,12 +1586,43 @@ void drawItems()
         hatAnimate = true;
         drawText();
     }
+
     doorAnimation(1);
     hatAnimation(1);
     wandAnimation(1);
+    spiderAnimation(1);
 
-    
-    
+    checkCollision();
+    if (flashlightFollow) {
+        float lightPos2[] = { flashLightX, flashLightY, flashLightZ, 1.0 };
+        float spotDirection[] = { 0.0, 0.0, 1.0 };
+        glPushMatrix();
+        glTranslated(fpX, fpY, fpZ);
+        glRotated(degrees, 0, 1, 0);
+        glTranslated(-fpX, -fpY, -fpZ);
+        glTranslated(fpX - flashLightX + 2, fpY - flashLightY - 1, fpZ - flashLightZ + 2);
+        glLightfv(GL_LIGHT2, GL_POSITION, lightPos2);
+        glLightfv(GL_LIGHT2, GL_SPOT_DIRECTION, spotDirection);
+        drawFlashlight();
+        glPopMatrix();
+    }
+    else {
+        drawFlashlight();
+    }
+
+    if (giveSnitch)
+    {
+        glPushMatrix();
+        glTranslated(fpX, fpY, fpZ);
+        glRotated(degrees, 0, 1, 0);
+        glTranslated(-fpX, -fpY, -fpZ);
+        glTranslated(fpX - snitchX + 2, fpY - snitchY + 2, fpZ - snitchZ + 2);
+        drawSnitch();
+        glPopMatrix();
+    }
+    else {
+        drawSnitch();
+    }
 }
 
 
@@ -1197,6 +1640,17 @@ void drawScene()
     glLightModelfv(GL_LIGHT_MODEL_AMBIENT, globAmb); 
     glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, matSpec);
     glMaterialfv(GL_FRONT_AND_BACK, GL_SHININESS, matShine);
+
+    //Light2 - Flashlight spotlight
+    float spotAngle = 25;
+    float spotExponent = 1.0;
+    float lightAmb2[] = { 0.9, 0.0, 0.0, 1.0 };
+    float lightDifAndSpec2[] = { 1.0, 1.0, 1.0, 1.0 };
+    glLightfv(GL_LIGHT2, GL_AMBIENT, lightAmb2);
+    glLightfv(GL_LIGHT2, GL_DIFFUSE, lightDifAndSpec2);
+    glLightfv(GL_LIGHT2, GL_SPECULAR, lightDifAndSpec2);
+    glLightf(GL_LIGHT2, GL_SPOT_CUTOFF, spotAngle);
+    glLightf(GL_LIGHT2, GL_SPOT_EXPONENT, spotExponent);
 
     //View
     gluLookAt(fpX, fpY, fpZ,
@@ -1260,21 +1714,6 @@ void setup(void)
     glLightfv(GL_LIGHT1, GL_DIFFUSE, lightDifAndSpec1);
     glLightfv(GL_LIGHT1, GL_SPECULAR, lightDifAndSpec1);
     glLightfv(GL_LIGHT1, GL_POSITION, lightPos1);
-
-    //Light2 - Flashlight spotlight
-    float spotDirection[] = { 1.0, 0.0, 0.0 };
-    float spotAngle = 12.5;
-    float spotExponent = 2.0;
-    float lightAmb2[] = { 0.9, 0.0, 0.0, 1.0 };
-    float lightDifAndSpec2[] = { 1.0, 1.0, 1.0, 1.0 };
-    float lightPos2[] = { 16.0, 3.5, -44.0, 1.0 };
-    glLightfv(GL_LIGHT2, GL_AMBIENT, lightAmb2);
-    glLightfv(GL_LIGHT2, GL_DIFFUSE, lightDifAndSpec2);
-    glLightfv(GL_LIGHT2, GL_SPECULAR, lightDifAndSpec2);
-    glLightfv(GL_LIGHT2, GL_POSITION, lightPos2);
-    glLightf(GL_LIGHT2, GL_SPOT_CUTOFF, spotAngle);
-    glLightfv(GL_LIGHT2, GL_SPOT_DIRECTION, spotDirection);
-    glLightf(GL_LIGHT2, GL_SPOT_EXPONENT, spotExponent);
 }
 
 //Resize Screen Function
@@ -1299,7 +1738,7 @@ void keyInput(unsigned char key, int x, int y)
         doorOpen = !doorOpen;
         break;
 
-    case 'l':
+    case 'L':
         if (lightsOn) {
             lightsOn = false;
             lightsClicked = 0;
@@ -1313,20 +1752,20 @@ void keyInput(unsigned char key, int x, int y)
         break;
 
     case 's':
+        spotlightOn = true;
+        flashlightFollow = true;
+        glEnable(GL_LIGHT2);
+        break;
+
+    case 'f':
         if (spotlightOn) {
             spotlightOn = false;
-            cout << "Flashlight On" << endl;
             glDisable(GL_LIGHT2);
         }
         else {
             spotlightOn = true;
-            cout << "Flashlight Off" << endl;
             glEnable(GL_LIGHT2);
         }
-        break;
-
-    case 'f':
-        flashlightOn = !flashlightOn;
         break;
 
     case 'w':
@@ -1335,14 +1774,10 @@ void keyInput(unsigned char key, int x, int y)
 
     case '>':
         globAmbVal += 0.1;
-        cout << "Increase global ambient light" << endl;
-        cout << "Global Ambient Light: " << globAmbVal << endl;
         break;
 
     case '<':
         globAmbVal -= 0.1;
-        cout << "Decrease global ambient light" << endl;
-        cout << "Global Ambient Light: " << globAmbVal << endl;
         break;
 
     case 'q':
@@ -1377,6 +1812,11 @@ void keyInput(unsigned char key, int x, int y)
         decider();
         break;
 
+    case 'p':
+        freezeSpider = true;
+        cout << "The giant spider is frozen, you have proven yourself worthy." << endl;
+        break;
+
     default:
         break;
     }
@@ -1392,8 +1832,6 @@ void keyInputSpecial(int key, int x, int y)
         if (canMove) {
             fpX -= stepsize * sin(degrees * PI / 180);
             fpZ -= stepsize * cos(degrees * PI / 180);
-            cout << "First Person Z-Coordinate: " << fpZ << endl;
-            cout << "First Person X-Coordinate: " << fpX << endl;
         }
         break;
 
@@ -1401,8 +1839,6 @@ void keyInputSpecial(int key, int x, int y)
         if (canMove) {
             fpX += stepsize * sin(degrees * PI / 180);
             fpZ += stepsize * cos(degrees * PI / 180);
-            cout << "First Person Z-Coordinate: " << fpZ << endl;
-            cout << "First Person X-Coordinate: " << fpX << endl;
         }
         break;
 
