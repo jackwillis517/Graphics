@@ -12,10 +12,28 @@
 *
 * Date submitted:  April 11, 2022
 *
-* References: 
+* References:
+* I used the following website to figure out the name of the freezing spell in Harry Potter
 * https://www.frankslide.com/what-harry-potter-spell-freezes-things/
 *
 * Interactions:
+* Press d to open/close doors
+* Press L to turn on/off lights
+* Press s to teleport the flashlight in front of you and turn it on
+* Press f to turn on/off the flashlight
+* Press w to select the wand and start the house guessing
+* Press e to translate right
+* Press q to translate left
+* Press G to select house Gryffindor
+* Press H to select house Hufflepuff
+* Press R to select house Ravenclaw
+* Press S to select house Slytherin
+* Press > to increase ambient lighting
+* Press < to decrease ambient lighting
+* Press Up Arrow to move forward
+* Press Down Arrow to move backward
+* Press Left Arrow to rotate left
+* Press Right Arrow to rotate right
 *******************************************/
 #define _CRT_SECURE_NO_DEPRECATE
 
@@ -32,6 +50,7 @@
 
 #define ONE_BY_ROOT_THREE 0.57735
 
+//Other globals
 using namespace std;
 static int PI = 3.14159;
 static int randNum;
@@ -125,10 +144,8 @@ float matAmbAndDifYellow[] = { 0.9, 0.9, 0.0, 1.0 };
 float matAmbAndDifBrown[] = { 0.2, 0.1, 0.1, 1.0 };
 //Material globals
 float noEmiss[] = { 0.0, 0.0, 0.0, 1.0 };
-
 float matSpec[] = { 1.0, 1.0, 1.0, 1.0 };
 float matSpecBlue[] = { 0.0, 0.0, 1.0, 1.0 };
-
 float matShine[] = { 50.0 };
 float noShine[] = { 128.0 };
 float lotsShine[] = { 3.0 };
@@ -185,8 +202,6 @@ void checkCollision() {
     glutPostRedisplay();
 }
 
-
-
 //Checks the house guess
 void decider()
 {
@@ -240,6 +255,7 @@ void decider()
         cout << "A sense of dread washes over you..." << endl;
         cout << "You are not alone." << endl;
         cout << "Rotate to confront the beast!" << endl;
+        // This is where I used the URL reference above //
         cout << "Quick cast Petrificus Totalus (p) to stop the arachnid!" << endl;
     }
 }
@@ -1626,7 +1642,6 @@ void drawItems()
 }
 
 
-
 //Drawing to Screen Function
 void drawScene()
 {
@@ -1781,11 +1796,11 @@ void keyInput(unsigned char key, int x, int y)
         break;
 
     case 'q':
-        fpY -= stepsize;
+        fpX -= stepsize;
         break;
 
     case 'e':
-        fpY += stepsize;
+        fpX += stepsize;
         break;
 
     case 'G':
@@ -1870,6 +1885,23 @@ void mouseInput(int button, int state, int x, int y)
 void printInteraction(void)
 {
     cout << "Interaction:" << endl;
+    cout << "Press d to open / close doors" << endl;
+    cout << "Press L to turn on / off lights" << endl;
+    cout << "Press s to teleport the flashlight in front of you and turn it on" << endl;
+    cout << "Press f to turn on / off the flashlight" << endl;
+    cout << "Press w to select the wand and start the house guessing" << endl;
+    cout << "Press e to translate right" << endl;
+    cout << "Press q to translate left" << endl;
+    cout << "Press G to select house Gryffindor" << endl;
+    cout << "Press H to select house Hufflepuff" << endl;
+    cout << "Press R to select house Ravenclaw" << endl;
+    cout << "Press S to select house Slytherin" << endl;
+    cout << "Press > to increase ambient lighting" << endl;
+    cout << "Press < to decrease ambient lighting" << endl;
+    cout << "Press Up Arrow to move forward" << endl;
+    cout << "Press Down Arrow to move backward" << endl;
+    cout << "Press Left Arrow to rotate left" << endl;
+    cout << "Press Right Arrow to rotate right" << endl;
 }
 
 //Main Loop
