@@ -15,6 +15,7 @@
 * References: 
 * sketchuptextureclub.com
 * dreamstime.com
+* freecreatives.com
 * Interactions:
 *******************************************/
 #define _CRT_SECURE_NO_DEPRECATE
@@ -37,7 +38,7 @@ using namespace std;
 static int PI = 3.14159265358979324;
 static bool play = false;
 static GLUquadricObj* qobj;
-static unsigned int texture[6];
+static unsigned int texture[15];
 static bool cafeScene = true;
 static bool hollywoodScene = false;
 static int turnCounter = 1;
@@ -71,10 +72,11 @@ static bool lightsOn = false;
 static bool spotlightOn = false;
 static bool flashlightFollow = false;
 static int lightsClicked = 0;
-static float globAmbVal = 0.8;
+static float globAmbVal = -0.2;
 
 //Animation globals
-
+static int act = 1; 
+static bool newtonAnimate = false;
 
 //First person movement globals
 static float fpX = 0.0;
@@ -87,7 +89,6 @@ static float stepsize = 1;
 static float rotsize = 5;
 static float degrees = 188;
 static bool canMove = true;
-
 
 //Chess Pieces
 static float pawnPinkX1 = 6;
@@ -105,7 +106,6 @@ static float kingPinkZ = 4;
 static float QueenPinkX = 4;
 static float QueenPinkY = 0;
 static float QueenPinkZ = 6;
-
 static float kingGreenX = 6;
 static float kingGreenY = 0;
 static float kingGreenZ = 14;
@@ -124,10 +124,61 @@ static float pawnGreenZ2 = 8;
 static float bishopGreenX1 = 8;
 static float bishopGreenY1 = 0;
 static float bishopGreenZ1 = 10;
-
 double xred = 6;
 double yred = 0;
 double zred = 2;
+double xblue = 12;
+double yblue = 0;
+double zblue = 8;
+double xgreen = 0;
+double ygreen = 0;
+double zgreen = 8;
+double xorange = 10;
+double yorange = 0;
+double zorange = 4;
+double xpurple = 4;
+double ypurple = 0;
+double zpurple = 6;
+double xblack = 6;
+double yblack = 0;
+double zblack = 14;
+double xgrey = 0;
+double ygrey = 0;
+double zgrey = 14;
+double xdarkgrey = 6;
+double ydarkgrey = 0;
+double zdarkgrey = 10;
+double xyellow = 10;
+double yyellow = 0;
+double zyellow = 12;
+double xbrown = 14;
+double ybrown = 0;
+double zbrown = 8;
+double xwhite = 8;
+double ywhite = 0;
+double zwhite = 10;
+
+//Newtons Craddle
+
+static float ballX1 = 6.0;
+static float ballY1 = 3.0;
+static float ballZ1 = -10.0;
+
+static float ballX2 = 8.0;
+static float ballY2 = 3.0;
+static float ballZ2 = -10.0;
+
+static float ballX3 = 10.0;
+static float ballY3 = 3.0;
+static float ballZ3 = -10.0;
+
+static float ballX4 = 12.0;
+static float ballY4 = 3.0;
+static float ballZ4 = -10.0;
+
+static float ballX5 = 14.0;
+static float ballY5 = 3.0;
+static float ballZ5 = -10.0;
 
 //Lighting globals
 //Red
@@ -313,7 +364,7 @@ BitMapFile* getBMPData(string filename)
 void loadExternalTextures()
 {
     //Local storage for bmp image data.
-    BitMapFile* image[6];
+    BitMapFile* image[15];
 
     //Textures.
     image[0] = getBMPData("Textures/cherrywood.bmp");
@@ -322,6 +373,8 @@ void loadExternalTextures()
     image[3] = getBMPData("Textures/silver.bmp");
     image[4] = getBMPData("Textures/star.bmp");
     image[5] = getBMPData("Textures/marble.bmp");
+    image[6] = getBMPData("Textures/walnut.bmp");
+    image[7] = getBMPData("Textures/chrome.bmp");
 
     //Cherrywood image to texture index[0].
     glBindTexture(GL_TEXTURE_2D, texture[0]);
@@ -376,19 +429,79 @@ void loadExternalTextures()
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, image[5]->sizeX, image[5]->sizeY, 0,
         GL_RGB, GL_UNSIGNED_BYTE, image[5]->data);
+
+    //Walnut image to texture index[6].
+    glBindTexture(GL_TEXTURE_2D, texture[6]);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, image[6]->sizeX, image[6]->sizeY, 0,
+        GL_RGB, GL_UNSIGNED_BYTE, image[6]->data);
+
+    //Chrome image to texture index[7].
+    glBindTexture(GL_TEXTURE_2D, texture[7]);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, image[7]->sizeX, image[7]->sizeY, 0,
+        GL_RGB, GL_UNSIGNED_BYTE, image[7]->data);
 }
 //--------------------------------------------------------------------------------------------------------------//
 
 
 
 //---------------------------------------------Animations-------------------------------------------------------//
+void animateNewton() //acts here
+{
+    if (act == 1) {
+        if (ballX1 > 0) {
+            ballX1 -= .0005;
+            ballY1 += .0001;
+        }
+        else {
+            act = 2;
+        }
+    }
 
+    if (act == 2) {
+        if (ballX1 < 6) {
+            ballX1 += .0005;
+            ballY1 -= .0001;
+        }
+        else {
+            act = 3;
+        }
+    }
 
+    if (act == 3) {
+        if (ballX5 < 20) {
+            ballX5 += .0005;
+            ballY5 += .0001;
+        }
+        else {
+            act = 4;
+        }
+    }
 
+    if (act == 4) {
+        if (ballX5 > 14) {
+            ballX5 -= .0005;
+            ballY5 -= .0001;
+        }
+        else {
+            act = 1;
+        }
+    }
+    
+}
 
-
-
-
+void NewtonAnimation(int x)
+{
+    if (newtonAnimate) animateNewton();
+    glutTimerFunc(100, NewtonAnimation, 1);
+}
 //-------------------------------------------------------------------------------------------------------------//
 
 
@@ -398,10 +511,39 @@ void drawGround()
 {
     glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, matAmbAndDifWhite);
     glPushMatrix();
-    glTranslated(0, -1, 0);
-    glScaled(50, 1, 50);
+    glTranslated(5, -1, 0);
+    glScaled(40, 1, 35);
     glutSolidCube(1);
     glPopMatrix();
+}
+
+void drawWalls()
+{
+    //glEnable(GL_TEXTURE_2D);
+    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, matAmbAndDifBlack);
+    glNormal3f(-1.0, 0.0, 0.0);
+    glBegin(GL_POLYGON);
+    glTexCoord2f(0.0, 0.0); glVertex3f(-35.0, 0.0, -40.0);
+    glTexCoord2f(1.0, 0.0); glVertex3f(-35.0, -25.0, -40.0);
+    glTexCoord2f(1.0, 1.0); glVertex3f(-35.0, -25.0, 40.0);
+    glTexCoord2f(0.0, 1.0); glVertex3f(-35.0, 0.0, 40.0);
+    glEnd();
+    glNormal3f(-1.0, 0.0, 0.0);
+    glBegin(GL_POLYGON);
+    glTexCoord2f(0.0, 0.0); glVertex3f(-35.0, 60.0, -40.0);
+    glTexCoord2f(1.0, 0.0); glVertex3f(-35.0, 35.0, -40.0);
+    glTexCoord2f(1.0, 1.0); glVertex3f(-35.0, 35.0, 40.0);
+    glTexCoord2f(0.0, 1.0); glVertex3f(-35.0, 60.0, 40.0);
+    glEnd();
+    glNormal3f(-1.0, 0.0, 0.0);
+    glBegin(GL_POLYGON);
+    glTexCoord2f(0.0, 0.0); glVertex3f(-35.0, -25.0, 25.0);
+    glTexCoord2f(1.0, 0.0); glVertex3f(-35.0, 35.0, 25.0);
+    glTexCoord2f(1.0, 1.0); glVertex3f(-35.0, 35.0, 40.0);
+    glTexCoord2f(0.0, 1.0); glVertex3f(-35.0, -25.0, 40.0);
+    glEnd();
+    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, matAmbAndDifWhite);
+    //glDisable(GL_TEXTURE_2D);
 }
 
 void drawClockRest()
@@ -588,6 +730,86 @@ void drawCoffeeCup()
 
 void drawNewtonsCraddle()
 {
+    glEnable(GL_TEXTURE_2D);
+    glBindTexture(GL_TEXTURE_2D, texture[3]);
+    glPushMatrix();
+    glTranslated(4.0, 9.0, -7.75);
+    glRotated(90, 1, 0, 0);
+    gluCylinder(qobj, .20, .20, 9.0, 40, 5);
+    glPopMatrix();
+
+    glPushMatrix();
+    glTranslated(4.0, 9.0, -12.25);
+    glRotated(90, 1, 0, 0);
+    gluCylinder(qobj, .20, .20, 9.0, 40, 5);
+    glPopMatrix();
+
+    glPushMatrix();
+    glTranslated(16.0, 9.0, -7.75);
+    glRotated(90, 1, 0, 0);
+    gluCylinder(qobj, .20, .20, 9.0, 40, 5);
+    glPopMatrix();
+
+    glPushMatrix();
+    glTranslated(16.0, 9.0, -12.25);
+    glRotated(90, 1, 0, 0);
+    gluCylinder(qobj, .20, .20, 9.0, 40, 5);
+    glPopMatrix();
+
+    /*glPushMatrix();
+    glTranslated(16.0, 9.0, -12.5);
+    gluCylinder(qobj, .20, .20, 5.0, 40, 5);
+    glPopMatrix();
+
+    glPushMatrix();
+    glTranslated(4.0, 9.0, -12.5);
+    gluCylinder(qobj, .20, .20, 5.0, 40, 5);
+    glPopMatrix();*/
+
+    glPushMatrix();
+    glTranslated(3.8, 9.0, -12.25);
+    glRotated(90, 0, 1, 0);
+    gluCylinder(qobj, .20, .20, 12.3, 40, 5);
+    glPopMatrix();
+
+    glPushMatrix();
+    glTranslated(3.8, 9.0, -7.75);
+    glRotated(90, 0, 1, 0);
+    gluCylinder(qobj, .20, .20, 12.3, 40, 5);
+    glPopMatrix();
+
+    glBindTexture(GL_TEXTURE_2D, texture[7]);
+    glPushMatrix();
+    glTranslated(ballX1, ballY1, ballZ1);
+    glRotated(90, 1, 0, 0);
+    gluSphere(qobj, 1.0, 50, 50);
+    glPopMatrix();
+
+    glPushMatrix();
+    glTranslated(ballX2, ballY2, ballZ2);
+    glRotated(90, 1, 0, 0);
+    gluSphere(qobj, 1.0, 50, 50);
+    glPopMatrix();
+
+    glPushMatrix();
+    glTranslated(ballX3, ballY3, ballZ3);
+    glRotated(90, 1, 0, 0);
+    gluSphere(qobj, 1.0, 50, 50);
+    glPopMatrix();
+
+    glPushMatrix();
+    glTranslated(ballX4, ballY4, ballZ4);
+    glRotated(90, 1, 0, 0);
+    gluSphere(qobj, 1.0, 50, 50);
+    glPopMatrix();
+
+    glPushMatrix();
+    glTranslated(ballX5, ballY5, ballZ5);
+    glRotated(90, 1, 0, 0);
+    gluSphere(qobj, 1.0, 50, 50);
+    glPopMatrix();
+    glDisable(GL_TEXTURE_2D);
+
     glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, matAmbAndDifBlack);
     glPushMatrix();
     glTranslated(10.0, 0.0, -10.0);
@@ -604,7 +826,7 @@ void drawBoardSquare1(float x, float z)
         glBindTexture(GL_TEXTURE_2D, texture[5]);
     }
     else {
-        glBindTexture(GL_TEXTURE_2D, texture[1]);
+        glBindTexture(GL_TEXTURE_2D, texture[6]);
     }
     glNormal3f(0.0, -1.0, 0.0);
     glBegin(GL_POLYGON);
@@ -818,7 +1040,7 @@ void drawKingPink()
     glPushMatrix();
     glTranslated(kingPinkX, kingPinkY + .25, kingPinkZ);
     glRotated(-90, 1, 0, 0);
-    gluCylinder(qobj, 0.5, 0.5, 3.25, 15, 5);
+    gluCylinder(qobj, 0.5, 0.3, 3.25, 15, 5);
     glPopMatrix();
 
     glPushMatrix();
@@ -833,6 +1055,12 @@ void drawKingPink()
     glScaled(.35, .75, .35);
     glRotated(90, 1, 0, 0);
     glutSolidTorus(.45, 2, 25, 25);
+    glPopMatrix();
+
+    glPushMatrix();
+    glTranslated(kingPinkX, kingPinkY + 3.65, kingPinkZ);
+    glRotated(90, 1, 0, 0);
+    gluDisk(qobj, 0.0, 0.7, 40, 4);
     glPopMatrix();
     if (!selecting) {
         glDisable(GL_TEXTURE_2D);
@@ -855,7 +1083,7 @@ void drawQueenPink()
     glPushMatrix();
     glTranslated(QueenPinkX, QueenPinkY + .25, QueenPinkZ);
     glRotated(-90, 1, 0, 0);
-    gluCylinder(qobj, 0.5, 0.5, 3.25, 15, 5);
+    gluCylinder(qobj, 0.5, 0.3, 3.25, 15, 5);
     glPopMatrix();
 
     glPushMatrix();
@@ -934,7 +1162,7 @@ void drawKingGreen()
     glPushMatrix();
     glTranslated(kingGreenX, kingGreenY + .25, kingGreenZ);
     glRotated(-90, 1, 0, 0);
-    gluCylinder(qobj, 0.5, 0.5, 3.25, 15, 5);
+    gluCylinder(qobj, 0.5, 0.3, 3.25, 15, 5);
     glPopMatrix();
 
     glPushMatrix();
@@ -949,6 +1177,12 @@ void drawKingGreen()
     glScaled(.35, .75, .35);
     glRotated(90, 1, 0, 0);
     glutSolidTorus(.45, 2, 25, 25);
+    glPopMatrix();
+
+    glPushMatrix();
+    glTranslated(kingGreenX, kingGreenY + 3.65, kingGreenZ);
+    glRotated(90, 1, 0, 0);
+    gluDisk(qobj, 0.0, 0.7, 40, 4);
     glPopMatrix();
     if (!selecting) {
         glDisable(GL_TEXTURE_2D);
@@ -1184,28 +1418,148 @@ void drawBoardBoarder()
 
 void drawRedBox()
 {
-    //red cube
     glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, matAmbAndDifRed);
     glPushMatrix();
     glTranslatef(xred, yred, zred);
-    //draw a red cube
     glColor3f(1.0, 0.0, 0.0);
     glutSolidCube(1.0);
     glPopMatrix();
     glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, matAmbAndDifWhite);
 }
 
+void drawBlueBox()
+{
+    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, matAmbAndDifBlue);
+    glPushMatrix();
+    glTranslatef(xblue, yblue, zblue);
+    glColor3f(1.0, 0.0, 0.0);
+    glutSolidCube(1.0);
+    glPopMatrix();
+    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, matAmbAndDifWhite);
+}
+
+void drawGreenBox()
+{
+    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, matAmbAndDifGreen);
+    glPushMatrix();
+    glTranslatef(xgreen, ygreen, zgreen);
+    glColor3f(1.0, 0.0, 0.0);
+    glutSolidCube(1.0);
+    glPopMatrix();
+    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, matAmbAndDifWhite);
+}
+
+void drawOrangeBox()
+{
+    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, matAmbAndDifOrange);
+    glPushMatrix();
+    glTranslatef(xorange, yorange, zorange);
+    glColor3f(1.0, 0.0, 0.0);
+    glutSolidCube(1.0);
+    glPopMatrix();
+    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, matAmbAndDifWhite);
+}
+
+void drawPurpleBox()
+{
+    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, matAmbAndDifPurple);
+    glPushMatrix();
+    glTranslatef(xpurple, ypurple, zpurple);
+    glColor3f(1.0, 0.0, 0.0);
+    glutSolidCube(1.0);
+    glPopMatrix();
+    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, matAmbAndDifWhite);
+}
+
+void drawBlackBox()
+{
+    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, matAmbAndDifBlack);
+    glPushMatrix();
+    glTranslatef(xblack, yblack, zblack);
+    glColor3f(1.0, 0.0, 0.0);
+    glutSolidCube(1.0);
+    glPopMatrix();
+    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, matAmbAndDifWhite);
+}
+
+void drawGreyBox()
+{
+    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, matAmbAndDifGrey);
+    glPushMatrix();
+    glTranslatef(xgrey, ygrey, zgrey);
+    glColor3f(1.0, 0.0, 0.0);
+    glutSolidCube(1.0);
+    glPopMatrix();
+    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, matAmbAndDifWhite);
+}
+
+void drawDarkGreyBox()
+{
+    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, matAmbAndDifDarkGrey);
+    glPushMatrix();
+    glTranslatef(xdarkgrey, ydarkgrey, zdarkgrey);
+    glColor3f(1.0, 0.0, 0.0);
+    glutSolidCube(1.0);
+    glPopMatrix();
+    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, matAmbAndDifWhite);
+}
+
+void drawYellowBox()
+{
+    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, matAmbAndDifYellow);
+    glPushMatrix();
+    glTranslatef(xyellow, yyellow, zyellow);
+    glColor3f(1.0, 0.0, 0.0);
+    glutSolidCube(1.0);
+    glPopMatrix();
+    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, matAmbAndDifWhite);
+}
+
+void drawBrownBox()
+{
+    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, matAmbAndDifBrown);
+    glPushMatrix();
+    glTranslatef(xbrown, ybrown, zbrown);
+    glColor3f(1.0, 0.0, 0.0);
+    glutSolidCube(1.0);
+    glPopMatrix();
+    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, matAmbAndDifWhite);
+}
+
+void drawWhiteBox()
+{
+    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, matAmbAndDifWhite);
+    glPushMatrix();
+    glTranslatef(xwhite, ywhite, zwhite);
+    glColor3f(1.0, 0.0, 0.0);
+    glutSolidCube(1.0);
+    glPopMatrix();
+    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, matAmbAndDifWhite);
+}
+
+
 void drawItems()
 {
     drawChessboard();
     drawBoardBoarder();
     drawGround();
+    drawWalls();
     drawClockRest();
     drawClocks();
     drawClocks2();
     drawCoffeeCup();
     drawNewtonsCraddle();
-    drawRedBox();
+    //drawRedBox();
+    //drawBlueBox();
+    //drawGreenBox();
+    //drawOrangeBox();
+    //drawPurpleBox();
+    //drawBlackBox();
+    //drawGreyBox();
+    //drawYellowBox();
+    //drawBrownBox();
+    //drawWhiteBox();
+    //drawDarkGreyBox();
 
     drawRookPink1();
     drawPawnPink2();
@@ -1218,6 +1572,8 @@ void drawItems()
     drawPawnGreen1();
     drawPawnGreen2();
     drawBishopGreen1();
+    
+    //NewtonAnimation(1);
 
     checkCollision();
 }
@@ -1282,7 +1638,7 @@ void setup(void)
     glClearColor(0.1843137254901960784313725490196, 0.16862745098039215686274509803922, 0.18823529411764705882352941176471, 0.0);
     
     //Create texture index array.
-    glGenTextures(6, texture);
+    glGenTextures(15, texture);
 
     //Load external textures.
     loadExternalTextures();
@@ -1374,6 +1730,11 @@ void keyInput(unsigned char key, int x, int y)
         cout << "Turn Number: " << turnCounter << endl;
         break;
 
+    case 'n':
+        newtonAnimate = !newtonAnimate;
+        cout << "Newtons Craddle Switched" << endl;
+        break;
+
     default:
         break;
     }
@@ -1419,12 +1780,6 @@ void keyInputSpecial(int key, int x, int y)
 
 void mouseInput(int button, int state, int x, int y)
 {
-    /*if (state == GLUT_DOWN && button == GLUT_LEFT) {
-        selecting = true;
-        xMouse = x;
-        yMouse = height - y;
-        glutPostRedisplay();
-    }*/
     if (button == GLUT_LEFT && state == GLUT_DOWN) //mouse clicked
     {
         std::cout << "left button pressed" << std::endl;
@@ -1434,19 +1789,29 @@ void mouseInput(int button, int state, int x, int y)
 
         //conversion factors
         double fw = 30.0 / width;
-        double fh = -30.0 / height;  //note - since in z neg above pos
+        double fh = -30.0 / height;
 
         double a = x * fw;
         double b = (height - y) * fh;
 
         //window coordinates
         double xW = fpX2 + -15 + a;
-        double zW = fpZ2 + b;  //z instead of y
+        double zW = fpZ2 + b;
 
-        std::cout << "xW=" << xW << ' ' << "zW=" << zW << std::endl;
+        cout << "xW=" << xW << ' ' << "zW=" << zW << endl;
         cout << "xred=" << xred << ' ' << "zred=" << zred << endl;
-        //if click is in red box
-        if (xW <= xred + 1 && xW >= xred - 1 && zW <= zred + 2.5 && zW >= zred - 2.5)  //z instead of y
+        
+        if (xW <= xred + 1 && xW >= xred - 1 && zW <= zred + 2.5 && zW >= zred - 2.5
+            || xW <= xblue + 1 && xW >= xblue - 1 && zW <= zblue + 2.5 && zW >= zblue - 2.5
+            || xW <= xgreen + 1 && xW >= xgreen - 1 && zW <= zgreen + 2.5 && zW >= zgreen - 2.5
+            || xW <= xorange + 1 && xW >= xorange - 1 && zW <= zorange + 2.5 && zW >= zorange - 2.5
+            || xW <= xpurple + 1 && xW >= xpurple - 1 && zW <= zpurple + 2.5 && zW >= zpurple - 2.5
+            || xW <= xblack + 1 && xW >= xblack - 1 && zW <= zblack + 2.5 && zW >= zblack - 2.5
+            || xW <= xgrey + 1 && xW >= xgrey - 1 && zW <= zgrey + 2.5 && zW >= zgrey - 2.5
+            || xW <= xdarkgrey + 1 && xW >= xdarkgrey - 1 && zW <= zdarkgrey + 2.5 && zW >= zdarkgrey - 2.5
+            || xW <= xyellow + 1 && xW >= xyellow - 1 && zW <= zyellow + 2.5 && zW >= zyellow - 2.5
+            || xW <= xbrown + 1 && xW >= xbrown - 1 && zW <= zbrown + 2.5 && zW >= zbrown - 2.5
+            || xW <= xwhite + 1 && xW >= xwhite - 1 && zW <= zwhite + 2.5 && zW >= zwhite - 2.5)
         {
             dragging = true;
             std::cout << "dragging" << std::endl;
@@ -1454,24 +1819,16 @@ void mouseInput(int button, int state, int x, int y)
         else {
             dragging = false;
         }
-
         glutPostRedisplay();
-
     }
-    /*if (state == GLUT_UP && button == GLUT_LEFT) {
-        selecting = false;
-        itemID = 0;
-    }*/
 
-    
     if (button == GLUT_LEFT && state == GLUT_UP) {
         selecting = false;
         itemID = 0;
         dragging = false;
     } 
 
-} //end mouseControlFunction
-
+}
 
 void mouseMotion(int x, int y)
 {
@@ -1487,11 +1844,82 @@ void mouseMotion(int x, int y)
         double zW = fpZ2 + 15 + b;    //z instead of y
         std::cout << "xW=" << xW << ' ' << "zW=" << zW << std::endl;
 
-        //give red cube world coordinates of the mouse
-        xred = xW;
-        zred = zW - 15.5;  //z instead of y
-        pawnPinkX1 = xred;
-        pawnPinkZ1 = zred;
+        if (itemID == PAWNPINK1) {
+            xred = xW;
+            zred = zW - 15.5;
+            pawnPinkX1 = xred;
+            pawnPinkZ1 = zred;
+        }
+
+        if (itemID == PAWNPINK2) {
+            xblue = xW;
+            zblue = zW - 15.5;
+            pawnPinkX2 = xblue;
+            pawnPinkZ2 = zblue;
+        }
+
+        if (itemID == ROOKPINK1) {
+            xgreen = xW;
+            zgreen = zW - 15.5;
+            rookPinkX1 = xgreen;
+            rookPinkZ1 = zgreen;
+        }
+
+        if (itemID == KINGPINK) {
+            xorange = xW;
+            zorange = zW - 15.5;
+            kingPinkX = xorange;
+            kingPinkZ = zorange;
+        }
+
+        if (itemID == QUEENPINK) {
+            xpurple = xW;
+            zpurple = zW - 15.5;
+            QueenPinkX = xpurple;
+            QueenPinkZ = zpurple;
+        }
+
+        if (itemID == KINGGREEN) {
+            xblack = xW;
+            zblack = zW - 15.5;
+            kingGreenX = xblack;
+            kingGreenZ = zblack;
+        }
+
+        if (itemID == ROOKGREEN1) {
+            xgrey = xW;
+            zgrey = zW - 15.5;
+            rookGreenX1 = xgrey;
+            rookGreenZ1 = zgrey;
+        }
+
+        if (itemID == ROOKGREEN2) {
+            xdarkgrey = xW;
+            zdarkgrey = zW - 15.5;
+            rookGreenX2 = xdarkgrey;
+            rookGreenZ2 = zdarkgrey;
+        }
+
+        if (itemID == PAWNGREEN1) {
+            xyellow = xW;
+            zyellow = zW - 15.5;
+            pawnGreenX1 = xyellow;
+            pawnGreenZ1 = zyellow;
+        }
+
+        if (itemID == PAWNGREEN2) {
+            xbrown = xW;
+            zbrown = zW - 15.5;
+            pawnGreenX2 = xbrown;
+            pawnGreenZ2 = zbrown;
+        }
+
+        if (itemID == BISHOPGREEN1) {
+            xwhite = xW;
+            zwhite = zW - 15.5;
+            bishopGreenX1 = xwhite;
+            bishopGreenZ1 = zwhite;
+        }
 
         glutPostRedisplay();
     } // end of dragging
