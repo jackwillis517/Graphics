@@ -16,6 +16,8 @@
 * sketchuptextureclub.com
 * dreamstime.com
 * freecreatives.com
+* stackoverflow.com
+* colourbox.dk
 * Interactions:
 *******************************************/
 #define _CRT_SECURE_NO_DEPRECATE
@@ -39,8 +41,7 @@ static int PI = 3.14159265358979324;
 static bool play = false;
 static GLUquadricObj* qobj;
 static unsigned int texture[15];
-static bool cafeScene = true;
-static bool hollywoodScene = false;
+static int sceneCounter = 1;
 static int turnCounter = 1;
 static int clockX1 = -4.85;
 static int clockY1 = 3.5;
@@ -68,11 +69,9 @@ bool selecting = false;
 bool dragging = false;
 
 //Light globals
-static bool lightsOn = false;
-static bool spotlightOn = false;
-static bool flashlightFollow = false;
-static int lightsClicked = 0;
-static float globAmbVal = -0.2;
+static float globAmbVal = 0.2;
+static bool sun = false;
+static bool lamp = false;
 
 //Animation globals
 static int act = 1; 
@@ -375,6 +374,10 @@ void loadExternalTextures()
     image[5] = getBMPData("Textures/marble.bmp");
     image[6] = getBMPData("Textures/walnut.bmp");
     image[7] = getBMPData("Textures/chrome.bmp");
+    image[8] = getBMPData("Textures/stoneblock.bmp");
+    image[9] = getBMPData("Textures/stonewall.bmp");
+    image[10] = getBMPData("Textures/obsidian.bmp");
+    image[11] = getBMPData("Textures/lava.bmp");
 
     //Cherrywood image to texture index[0].
     glBindTexture(GL_TEXTURE_2D, texture[0]);
@@ -447,6 +450,42 @@ void loadExternalTextures()
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, image[7]->sizeX, image[7]->sizeY, 0,
         GL_RGB, GL_UNSIGNED_BYTE, image[7]->data);
+
+    //Stoneblock image to texture index[8].
+    glBindTexture(GL_TEXTURE_2D, texture[8]);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, image[8]->sizeX, image[8]->sizeY, 0,
+        GL_RGB, GL_UNSIGNED_BYTE, image[8]->data);
+
+    //Stonewall image to texture index[9].
+    glBindTexture(GL_TEXTURE_2D, texture[9]);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, image[9]->sizeX, image[9]->sizeY, 0,
+        GL_RGB, GL_UNSIGNED_BYTE, image[9]->data);
+
+    //Obsidian image to texture index[10].
+    glBindTexture(GL_TEXTURE_2D, texture[10]);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, image[10]->sizeX, image[10]->sizeY, 0,
+        GL_RGB, GL_UNSIGNED_BYTE, image[10]->data);
+    
+    //Lava image to texture index[11].
+    glBindTexture(GL_TEXTURE_2D, texture[11]);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, image[11]->sizeX, image[11]->sizeY, 0,
+        GL_RGB, GL_UNSIGNED_BYTE, image[11]->data);
 }
 //--------------------------------------------------------------------------------------------------------------//
 
@@ -521,29 +560,207 @@ void drawWalls()
 {
     //glEnable(GL_TEXTURE_2D);
     glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, matAmbAndDifBlack);
-    glNormal3f(-1.0, 0.0, 0.0);
+    glNormal3f(0.0, 0.0, 1.0);
     glBegin(GL_POLYGON);
     glTexCoord2f(0.0, 0.0); glVertex3f(-35.0, 0.0, -40.0);
     glTexCoord2f(1.0, 0.0); glVertex3f(-35.0, -25.0, -40.0);
     glTexCoord2f(1.0, 1.0); glVertex3f(-35.0, -25.0, 40.0);
     glTexCoord2f(0.0, 1.0); glVertex3f(-35.0, 0.0, 40.0);
     glEnd();
-    glNormal3f(-1.0, 0.0, 0.0);
+    glNormal3f(0.0, 0.0, 1.0);
     glBegin(GL_POLYGON);
     glTexCoord2f(0.0, 0.0); glVertex3f(-35.0, 60.0, -40.0);
     glTexCoord2f(1.0, 0.0); glVertex3f(-35.0, 35.0, -40.0);
     glTexCoord2f(1.0, 1.0); glVertex3f(-35.0, 35.0, 40.0);
     glTexCoord2f(0.0, 1.0); glVertex3f(-35.0, 60.0, 40.0);
     glEnd();
-    glNormal3f(-1.0, 0.0, 0.0);
+    glNormal3f(0.0, 0.0, 1.0);
     glBegin(GL_POLYGON);
     glTexCoord2f(0.0, 0.0); glVertex3f(-35.0, -25.0, 25.0);
     glTexCoord2f(1.0, 0.0); glVertex3f(-35.0, 35.0, 25.0);
     glTexCoord2f(1.0, 1.0); glVertex3f(-35.0, 35.0, 40.0);
     glTexCoord2f(0.0, 1.0); glVertex3f(-35.0, -25.0, 40.0);
     glEnd();
+    glNormal3f(0.0, 0.0, 1.0);
+    glBegin(GL_POLYGON);
+    glTexCoord2f(0.0, 0.0); glVertex3f(-35.0, -25.0, -25.0);
+    glTexCoord2f(1.0, 0.0); glVertex3f(-35.0, 35.0, -25.0);
+    glTexCoord2f(1.0, 1.0); glVertex3f(-35.0, 35.0, -40.0);
+    glTexCoord2f(0.0, 1.0); glVertex3f(-35.0, -25.0, -40.0);
+    glEnd();
+    glNormal3f(0.0, 0.0, 1.0);
+    glBegin(GL_POLYGON);
+    glTexCoord2f(0.0, 0.0); glVertex3f(-35.0, -25.0, -10.0);
+    glTexCoord2f(1.0, 0.0); glVertex3f(-35.0, 35.0, -10.0);
+    glTexCoord2f(1.0, 1.0); glVertex3f(-35.0, 35.0, 10.0);
+    glTexCoord2f(0.0, 1.0); glVertex3f(-35.0, -25.0, 10.0);
+    glEnd();
+
+
+    glPushMatrix();
+    glTranslated(-40.0, -30.0, -40.0);
+    glScaled(100.0, 100.0, 25.0);
+    double n = 100.0;
+    glNormal3f(0.0, 0.0, 1.0);
+    for (int r = 0; r < n; r++)
+    {
+        glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, matAmbAndDifBlue);
+        glBegin(GL_TRIANGLE_STRIP);
+        for (int c = 0; c <= n; c++)
+        {
+            glVertex3f(c / n, r / n, 0.0);
+            glVertex3f(c / n, (r + 1) / n, 0.0);
+        }
+        glEnd();
+    }
+    glPopMatrix();
+
+    glPushMatrix();
+    glTranslated(-40.0, -30.0, 40.0);
+    glScaled(100.0, 100.0, 25.0);
+    double j = 100.0;
+    glNormal3f(0.0, 0.0, 1.0);
+    for (int r = 0; r < j; r++)
+    {
+        glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, matAmbAndDifBlue);
+        glBegin(GL_TRIANGLE_STRIP);
+        for (int c = 0; c <= j; c++)
+        {
+            glVertex3f(c / j, r / j, 0.0);
+            glVertex3f(c / j, (r + 1) / j, 0.0);
+        }
+        glEnd();
+    }
+    glPopMatrix();
+
+    glPushMatrix();
+    glTranslated(40.0, -30.0, 40.0);
+    glRotated(90, 0, 1, 0);
+    glScaled(100.0, 100.0, 25.0);
+    double k = 100.0;
+    glNormal3f(0.0, 0.0, 1.0);
+    for (int r = 0; r < k; r++)
+    {
+        glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, matAmbAndDifGrey);
+        glBegin(GL_TRIANGLE_STRIP);
+        for (int c = 0; c <= k; c++)
+        {
+            glVertex3f(c / k, r / k, 0.0);
+            glVertex3f(c / k, (r + 1) / k, 0.0);
+        }
+        glEnd();
+    }
+    glPopMatrix();
+
+    glPushMatrix();
+    glTranslated(-40.0, -20.0, -40.0);
+    glRotated(90, 1, 0, 0);
+    glScaled(100.0, 100.0, 25.0);
+    double q = 100.0;
+    glNormal3f(0.0, -1.0, 0.0);
+    for (int r = 0; r < q; r++)
+    {
+        glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, matAmbAndDifOrange);
+        glBegin(GL_TRIANGLE_STRIP);
+        for (int c = 0; c <= q; c++)
+        {
+            glVertex3f(c / q, r / q, 0.0);
+            glVertex3f(c / q, (r + 1) / q, 0.0);
+        }
+        glEnd();
+    }
+    glPopMatrix();
+
+    glPushMatrix();
+    glTranslated(-40.0, 50.0, -40.0);
+    glRotated(90, 1, 0, 0);
+    glScaled(100.0, 100.0, 25.0);
+    double w = 100.0;
+    glNormal3f(0.0, 1.0, 0.0);
+    for (int r = 0; r < w; r++)
+    {
+        glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, matAmbAndDifWhite);
+        glBegin(GL_TRIANGLE_STRIP);
+        for (int c = 0; c <= w; c++)
+        {
+            glVertex3f(c / w, r / w, 0.0);
+            glVertex3f(c / w, (r + 1) / w, 0.0);
+        }
+        glEnd();
+    }
+    glPopMatrix();
+
     glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, matAmbAndDifWhite);
     //glDisable(GL_TEXTURE_2D);
+}
+
+void drawLamp()
+{
+    glEnable(GL_TEXTURE_2D);
+    glBindTexture(GL_TEXTURE_2D, texture[1]);
+    glPushMatrix();
+    glTranslated(-7.0, 15, -10);
+    glRotated(45, 0, 1, 0);
+    glRotated(45, 1, 0, 0);
+    gluCylinder(qobj, 1.5, 3, 5.0, 40, 5);
+    glPopMatrix();
+
+    glPushMatrix();
+    glTranslated(-7.0, 0, -10);
+    glRotated(90, 1, 0, 0);
+    gluDisk(qobj, 0.0, 4, 40, 4);
+    glPopMatrix();
+
+    glPushMatrix();
+    glTranslated(-7.0, 1, -10);
+    glRotated(90, 1, 0, 0);
+    gluDisk(qobj, 0.5, 4, 40, 4);
+    glPopMatrix();
+    glDisable(GL_TEXTURE_2D);
+
+    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, matAmbAndDifDarkGrey);
+    glPushMatrix();
+    glTranslated(-7.0, 1, -10);
+    glRotated(90, 1, 0, 0);
+    gluCylinder(qobj, 4, 4, 1.0, 40, 5);
+    glPopMatrix();
+
+    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, matAmbAndDifBlack);
+    glPushMatrix();
+    glTranslated(-7.0, 15, -10);
+    glRotated(90, 1, 0, 0);
+    gluSphere(qobj, 1.5, 50, 50);
+    glPopMatrix();
+
+    glPushMatrix();
+    glTranslated(-8.75, 5, -11.5);
+    glRotated(45, 0, 1, 0);
+    glRotated(-35, 1, 0, 0);
+    glScaled(0.75, 10, 0.75);
+    glutSolidCube(1);
+    glPopMatrix();
+
+    glPushMatrix();
+    glTranslated(-8.75, 12, -11.5);
+    glRotated(45, 0, 1, 0);
+    glRotated(35, 1, 0, 0);
+    glScaled(0.75, 10, 0.75);
+    glutSolidCube(1);
+    glPopMatrix();
+
+    if (lamp) {
+        glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, matAmbAndDifYellow);
+    }
+    else {
+        glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, matAmbAndDifWhite);
+    }
+    
+    glPushMatrix();
+    glTranslated(-5.5, 13, -8);
+    glRotated(90, 1, 0, 0);
+    gluSphere(qobj, 1.75, 50, 50);
+    glPopMatrix();
+    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, matAmbAndDifWhite);
 }
 
 void drawClockRest()
@@ -616,6 +833,8 @@ void drawClockRest()
     gluSphere(qobj, 0.5, 50, 50);
     glPopMatrix();
     glDisable(GL_TEXTURE_2D);
+
+    
 }
 
 void drawClocks()
@@ -636,7 +855,7 @@ void drawClocks()
     gluDisk(qobj, 0.0, 1.5, 40, 4);
     glPopMatrix();
 
-    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, matAmbAndDifBlue);
+    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, matAmbAndDifDarkGrey);
     glPushMatrix();
     glTranslated(clockX1 + 1, clockY1, clockZ1);
     glRotated(90, 0, 1, 0);
@@ -663,7 +882,7 @@ void drawClocks2()
     gluDisk(qobj, 0.0, 1.5, 40, 4);
     glPopMatrix();
 
-    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, matAmbAndDifBlue);
+    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, matAmbAndDifDarkGrey);
     glPushMatrix();
     glTranslated(clockX2 + 1, clockY2, clockZ2);
     glRotated(90, 0, 1, 0);
@@ -822,11 +1041,14 @@ void drawNewtonsCraddle()
 void drawBoardSquare1(float x, float z)
 {
     glEnable(GL_TEXTURE_2D);
-    if (hollywoodScene) {
+    if (sceneCounter == 1) {
+        glBindTexture(GL_TEXTURE_2D, texture[6]);
+    }
+    if (sceneCounter == 2) {
         glBindTexture(GL_TEXTURE_2D, texture[5]);
     }
-    else {
-        glBindTexture(GL_TEXTURE_2D, texture[6]);
+    if (sceneCounter == 3) {
+        glBindTexture(GL_TEXTURE_2D, texture[8]);
     }
     glNormal3f(0.0, -1.0, 0.0);
     glBegin(GL_POLYGON);
@@ -841,11 +1063,14 @@ void drawBoardSquare1(float x, float z)
 void drawBoardSquare2(float x, float z)
 {
     glEnable(GL_TEXTURE_2D);
-    if (hollywoodScene) {
+    if (sceneCounter == 1) {
+        glBindTexture(GL_TEXTURE_2D, texture[0]);
+    }
+    if (sceneCounter == 2) {
         glBindTexture(GL_TEXTURE_2D, texture[4]);
     }
-    else {
-        glBindTexture(GL_TEXTURE_2D, texture[0]);
+    if (sceneCounter == 3) {
+        glBindTexture(GL_TEXTURE_2D, texture[9]);
     }
     glNormal3f(0.0, -1.0, 0.0);
     glBegin(GL_POLYGON);
@@ -957,11 +1182,14 @@ void drawPawnPink1()
     glColor3ub(0, 200, 0);
     if (!selecting) {
         glEnable(GL_TEXTURE_2D);
-        if (hollywoodScene) {
+        if (sceneCounter == 1) {
+            glBindTexture(GL_TEXTURE_2D, texture[0]);
+        }
+        if (sceneCounter == 2) {
             glBindTexture(GL_TEXTURE_2D, texture[2]);
         }
-        else {
-            glBindTexture(GL_TEXTURE_2D, texture[0]);
+        if (sceneCounter == 3) {
+            glBindTexture(GL_TEXTURE_2D, texture[11]);
         }
     }
     glPushMatrix();
@@ -994,11 +1222,14 @@ void drawRookPink1()
     glColor3ub(0, 201, 0);
     if (!selecting) {
         glEnable(GL_TEXTURE_2D);
-        if (hollywoodScene) {
+        if (sceneCounter == 1) {
+            glBindTexture(GL_TEXTURE_2D, texture[0]);
+        }
+        if (sceneCounter == 2) {
             glBindTexture(GL_TEXTURE_2D, texture[2]);
         }
-        else {
-            glBindTexture(GL_TEXTURE_2D, texture[0]);
+        if (sceneCounter == 3) {
+            glBindTexture(GL_TEXTURE_2D, texture[11]);
         }
     }
     glPushMatrix();
@@ -1030,11 +1261,14 @@ void drawKingPink()
     glColor3ub(0, 202, 0);
     if (!selecting) {
         glEnable(GL_TEXTURE_2D);
-        if (hollywoodScene) {
+        if (sceneCounter == 1) {
+            glBindTexture(GL_TEXTURE_2D, texture[0]);
+        }
+        if (sceneCounter == 2) {
             glBindTexture(GL_TEXTURE_2D, texture[2]);
         }
-        else {
-            glBindTexture(GL_TEXTURE_2D, texture[0]);
+        if (sceneCounter == 3) {
+            glBindTexture(GL_TEXTURE_2D, texture[11]);
         }
     }
     glPushMatrix();
@@ -1073,11 +1307,15 @@ void drawQueenPink()
     glColor3ub(0, 203, 0);
     if (!selecting) {
         glEnable(GL_TEXTURE_2D);
-        if (hollywoodScene) {
+        glEnable(GL_TEXTURE_2D);
+        if (sceneCounter == 1) {
+            glBindTexture(GL_TEXTURE_2D, texture[0]);
+        }
+        if (sceneCounter == 2) {
             glBindTexture(GL_TEXTURE_2D, texture[2]);
         }
-        else {
-            glBindTexture(GL_TEXTURE_2D, texture[0]);
+        if (sceneCounter == 3) {
+            glBindTexture(GL_TEXTURE_2D, texture[11]);
         }
     }
     glPushMatrix();
@@ -1116,11 +1354,15 @@ void drawPawnPink2()
     glColor3ub(0, 204, 0);
     if (!selecting) {
         glEnable(GL_TEXTURE_2D);
-        if (hollywoodScene) {
+        glEnable(GL_TEXTURE_2D);
+        if (sceneCounter == 1) {
+            glBindTexture(GL_TEXTURE_2D, texture[0]);
+        }
+        if (sceneCounter == 2) {
             glBindTexture(GL_TEXTURE_2D, texture[2]);
         }
-        else {
-            glBindTexture(GL_TEXTURE_2D, texture[0]);
+        if (sceneCounter == 3) {
+            glBindTexture(GL_TEXTURE_2D, texture[11]);
         }
     }
     glPushMatrix();
@@ -1152,11 +1394,14 @@ void drawKingGreen()
     glColor3ub(0, 205, 0);
     if (!selecting) {
         glEnable(GL_TEXTURE_2D);
-        if (hollywoodScene) {
+        if (sceneCounter == 1) {
+            glBindTexture(GL_TEXTURE_2D, texture[1]);
+        }
+        if (sceneCounter == 2) {
             glBindTexture(GL_TEXTURE_2D, texture[3]);
         }
-        else {
-            glBindTexture(GL_TEXTURE_2D, texture[1]);
+        if (sceneCounter == 3) {
+            glBindTexture(GL_TEXTURE_2D, texture[10]);
         }
     }
     glPushMatrix();
@@ -1195,11 +1440,14 @@ void drawRookGreen1()
     glColor3ub(0, 206, 0);
     if (!selecting) {
         glEnable(GL_TEXTURE_2D);
-        if (hollywoodScene) {
+        if (sceneCounter == 1) {
+            glBindTexture(GL_TEXTURE_2D, texture[1]);
+        }
+        if (sceneCounter == 2) {
             glBindTexture(GL_TEXTURE_2D, texture[3]);
         }
-        else {
-            glBindTexture(GL_TEXTURE_2D, texture[1]);
+        if (sceneCounter == 3) {
+            glBindTexture(GL_TEXTURE_2D, texture[10]);
         }
     }
     glPushMatrix();
@@ -1231,11 +1479,14 @@ void drawRookGreen2()
     glColor3ub(0, 207, 0);
     if (!selecting) {
         glEnable(GL_TEXTURE_2D);
-        if (hollywoodScene) {
+        if (sceneCounter == 1) {
+            glBindTexture(GL_TEXTURE_2D, texture[1]);
+        }
+        if (sceneCounter == 2) {
             glBindTexture(GL_TEXTURE_2D, texture[3]);
         }
-        else {
-            glBindTexture(GL_TEXTURE_2D, texture[1]);
+        if (sceneCounter == 3) {
+            glBindTexture(GL_TEXTURE_2D, texture[10]);
         }
     }
     glPushMatrix();
@@ -1268,11 +1519,14 @@ void drawPawnGreen1()
     glColor3ub(0, 208, 0);
     if (!selecting) {
         glEnable(GL_TEXTURE_2D);
-        if (hollywoodScene) {
+        if (sceneCounter == 1) {
+            glBindTexture(GL_TEXTURE_2D, texture[1]);
+        }
+        if (sceneCounter == 2) {
             glBindTexture(GL_TEXTURE_2D, texture[3]);
         }
-        else {
-            glBindTexture(GL_TEXTURE_2D, texture[1]);
+        if (sceneCounter == 3) {
+            glBindTexture(GL_TEXTURE_2D, texture[10]);
         }
     }
     glPushMatrix();
@@ -1304,11 +1558,14 @@ void drawPawnGreen2()
     glColor3ub(0, 209, 0);
     if (!selecting) {
         glEnable(GL_TEXTURE_2D);
-        if (hollywoodScene) {
+        if (sceneCounter == 1) {
+            glBindTexture(GL_TEXTURE_2D, texture[1]);
+        }
+        if (sceneCounter == 2) {
             glBindTexture(GL_TEXTURE_2D, texture[3]);
         }
-        else {
-            glBindTexture(GL_TEXTURE_2D, texture[1]);
+        if (sceneCounter == 3) {
+            glBindTexture(GL_TEXTURE_2D, texture[10]);
         }
     }
     glPushMatrix();
@@ -1340,11 +1597,14 @@ void drawBishopGreen1()
     glColor3ub(0, 210, 0);
     if (!selecting) {
         glEnable(GL_TEXTURE_2D);
-        if (hollywoodScene) {
+        if (sceneCounter == 1) {
+            glBindTexture(GL_TEXTURE_2D, texture[1]);
+        }
+        if (sceneCounter == 2) {
             glBindTexture(GL_TEXTURE_2D, texture[3]);
         }
-        else {
-            glBindTexture(GL_TEXTURE_2D, texture[1]);
+        if (sceneCounter == 3) {
+            glBindTexture(GL_TEXTURE_2D, texture[10]);
         }
     }
     glPushMatrix();
@@ -1359,11 +1619,14 @@ void drawBishopGreen1()
     //glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, matAmbAndDifGreen);
     if (!selecting) {
         glEnable(GL_TEXTURE_2D);
-        if (hollywoodScene) {
+        if (sceneCounter == 1) {
+            glBindTexture(GL_TEXTURE_2D, texture[1]);
+        }
+        if (sceneCounter == 2) {
             glBindTexture(GL_TEXTURE_2D, texture[3]);
         }
-        else {
-            glBindTexture(GL_TEXTURE_2D, texture[1]);
+        if (sceneCounter == 3) {
+            glBindTexture(GL_TEXTURE_2D, texture[10]);
         }
     }
     glPushMatrix();
@@ -1537,7 +1800,6 @@ void drawWhiteBox()
     glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, matAmbAndDifWhite);
 }
 
-
 void drawItems()
 {
     drawChessboard();
@@ -1549,6 +1811,9 @@ void drawItems()
     drawClocks2();
     drawCoffeeCup();
     drawNewtonsCraddle();
+    drawLamp();
+    
+
     //drawRedBox();
     //drawBlueBox();
     //drawGreenBox();
@@ -1573,7 +1838,7 @@ void drawItems()
     drawPawnGreen2();
     drawBishopGreen1();
     
-    //NewtonAnimation(1);
+    NewtonAnimation(1);
 
     checkCollision();
 }
@@ -1635,7 +1900,7 @@ void drawScene()
 //Setup Screen Function
 void setup(void)
 {
-    glClearColor(0.1843137254901960784313725490196, 0.16862745098039215686274509803922, 0.18823529411764705882352941176471, 0.0);
+    glClearColor(0.5215686274509804, 0.6980392156862745, 0.8980392156862745, 0.0);
     
     //Create texture index array.
     glGenTextures(15, texture);
@@ -1647,8 +1912,6 @@ void setup(void)
     glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 
     glEnable(GL_DEPTH_TEST);
-
-    glEnable(GL_NORMALIZE);
 
     //Enable Quadrics
     qobj = gluNewQuadric();
@@ -1669,12 +1932,43 @@ void setup(void)
     //Light0 - Main ambiant light
     float lightAmb0[] = { 0.0, 0.0, 0.0, 1.0 };
     float lightDifAndSpec0[] = { 1.0, 1.0, 1.0, 1.0 };
-    float lightPos0[] = { 0.0, 1.5, 3.0, 1.0 };
+    float lightPos0[] = { -45.0, 5, -20.0, 1.0 };
     glLightfv(GL_LIGHT0, GL_AMBIENT, lightAmb0);
     glLightfv(GL_LIGHT0, GL_DIFFUSE, lightDifAndSpec0);
     glLightfv(GL_LIGHT0, GL_SPECULAR, lightDifAndSpec0);
     glLightfv(GL_LIGHT0, GL_POSITION, lightPos0);
     glEnable(GL_LIGHT0);
+
+    //Light1 - Sun
+    float spotAngle1 = 35;
+    float spotExponent1 = 3.0;
+    float lightAmb1[] = { 0.0, 0.0, 0.0, 1.0 };
+    float lightDifAndSpec1[] = { 1.0, 1.0, 1.0, 1.0 };
+    float lightPos1[] = { -45, 5, -20.0, 1.0 };
+    float spotDirection1[] = { -1.0, 0.0, 0.0 };
+    glLightfv(GL_LIGHT1, GL_AMBIENT, lightAmb1);
+    glLightfv(GL_LIGHT1, GL_DIFFUSE, lightDifAndSpec1);
+    glLightfv(GL_LIGHT1, GL_SPECULAR, lightDifAndSpec1);
+    glLightf(GL_LIGHT1, GL_SPOT_CUTOFF, spotAngle1);
+    glLightf(GL_LIGHT1, GL_SPOT_EXPONENT, spotExponent1);
+    glLightfv(GL_LIGHT1, GL_POSITION, lightPos1);
+    glLightfv(GL_LIGHT1, GL_SPOT_DIRECTION, spotDirection1);
+
+    //Light2 - Spotlight
+    float spotAngle2 = 25;
+    float spotExponent2 = 5.0;
+    float lightAmb2[] = { 0.9, 0.9, 0.9, 1.0 };
+    float lightDifAndSpec2[] = { 1.0, 1.0, 1.0, 1.0 };
+    float lightPos2[] = { 15, 5, -20.0, 1.0 };
+    float spotDirection2[] = { 0.0, -1.0, 0.0 };
+    glLightfv(GL_LIGHT2, GL_AMBIENT, lightAmb2);
+    glLightfv(GL_LIGHT2, GL_DIFFUSE, lightDifAndSpec2);
+    glLightfv(GL_LIGHT2, GL_SPECULAR, lightDifAndSpec2);
+    glLightf(GL_LIGHT2, GL_SPOT_CUTOFF, spotAngle2);
+    glLightf(GL_LIGHT2, GL_SPOT_EXPONENT, spotExponent2);
+    glLightfv(GL_LIGHT2, GL_POSITION, lightPos2);
+    glLightfv(GL_LIGHT2, GL_SPOT_DIRECTION, spotDirection2);
+    glEnable(GL_LIGHT2);
 }
 
 //Resize Screen Function
@@ -1721,8 +2015,10 @@ void keyInput(unsigned char key, int x, int y)
         break;
 
     case '1':
-        hollywoodScene = !hollywoodScene;
-        cafeScene = !cafeScene;
+        if (turnCounter < 3) {
+            sceneCounter++;
+            cout << "Turn counter: " << turnCounter << endl;
+        }
         break;
 
     case 't':
@@ -1733,6 +2029,20 @@ void keyInput(unsigned char key, int x, int y)
     case 'n':
         newtonAnimate = !newtonAnimate;
         cout << "Newtons Craddle Switched" << endl;
+        break;
+
+    case 's':
+        sun = !sun;
+        if (sun) {
+            glEnable(GL_LIGHT1);
+        }
+        else {
+            glDisable(GL_LIGHT1);
+        }
+        break;
+
+    case 'l':
+        lamp = !lamp;
         break;
 
     default:
