@@ -18,6 +18,8 @@
 * freecreatives.com
 * stackoverflow.com
 * colourbox.dk
+* pinterest.com
+* wallpapermaiden.com
 * Interactions:
 *******************************************/
 #define _CRT_SECURE_NO_DEPRECATE
@@ -70,8 +72,12 @@ bool dragging = false;
 
 //Light globals
 static float globAmbVal = 0.2;
-static bool sun = false;
+static bool sun = true;
 static bool lamp = false;
+float ambZ = -20.0;
+float spotlightX = -5.5;
+float spotlightY = 13.0;
+float spotlightZ = -8.0;
 
 //Animation globals
 static int act = 1; 
@@ -378,6 +384,9 @@ void loadExternalTextures()
     image[9] = getBMPData("Textures/stonewall.bmp");
     image[10] = getBMPData("Textures/obsidian.bmp");
     image[11] = getBMPData("Textures/lava.bmp");
+    image[12] = getBMPData("Textures/lightwalnut.bmp");
+    image[13] = getBMPData("Textures/beach.bmp");
+    image[14] = getBMPData("Textures/galaxy.bmp");
 
     //Cherrywood image to texture index[0].
     glBindTexture(GL_TEXTURE_2D, texture[0]);
@@ -486,6 +495,33 @@ void loadExternalTextures()
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, image[11]->sizeX, image[11]->sizeY, 0,
         GL_RGB, GL_UNSIGNED_BYTE, image[11]->data);
+
+    //Light walnut image to texture index[12].
+    glBindTexture(GL_TEXTURE_2D, texture[12]);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, image[12]->sizeX, image[12]->sizeY, 0,
+        GL_RGB, GL_UNSIGNED_BYTE, image[12]->data);
+
+    //Beach walnut image to texture index[13].
+    glBindTexture(GL_TEXTURE_2D, texture[13]);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, image[13]->sizeX, image[13]->sizeY, 0,
+        GL_RGB, GL_UNSIGNED_BYTE, image[13]->data);
+
+    //Galaxy image to texture index[14].
+    glBindTexture(GL_TEXTURE_2D, texture[14]);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, image[14]->sizeX, image[14]->sizeY, 0,
+        GL_RGB, GL_UNSIGNED_BYTE, image[14]->data);
 }
 //--------------------------------------------------------------------------------------------------------------//
 
@@ -554,6 +590,32 @@ void drawGround()
     glScaled(40, 1, 35);
     glutSolidCube(1);
     glPopMatrix();
+
+    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, matAmbAndDifGrey);
+    glPushMatrix();
+    glTranslated(-14, -11, 16);
+    glScaled(1, 20, 1);
+    glutSolidCube(1);
+    glPopMatrix();
+
+    glPushMatrix();
+    glTranslated(-14, -11, -16);
+    glScaled(1, 20, 1);
+    glutSolidCube(1);
+    glPopMatrix();
+
+    glPushMatrix();
+    glTranslated(24, -11, -16);
+    glScaled(1, 20, 1);
+    glutSolidCube(1);
+    glPopMatrix();
+
+    glPushMatrix();
+    glTranslated(24, -11, 16);
+    glScaled(1, 20, 1);
+    glutSolidCube(1);
+    glPopMatrix();
+    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, matAmbAndDifWhite);
 }
 
 void drawWalls()
@@ -652,24 +714,18 @@ void drawWalls()
     }
     glPopMatrix();
 
+    glEnable(GL_TEXTURE_2D);
+    glBindTexture(GL_TEXTURE_2D, texture[12]);
     glPushMatrix();
-    glTranslated(-40.0, -20.0, -40.0);
-    glRotated(90, 1, 0, 0);
-    glScaled(100.0, 100.0, 25.0);
-    double q = 100.0;
     glNormal3f(0.0, -1.0, 0.0);
-    for (int r = 0; r < q; r++)
-    {
-        glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, matAmbAndDifOrange);
-        glBegin(GL_TRIANGLE_STRIP);
-        for (int c = 0; c <= q; c++)
-        {
-            glVertex3f(c / q, r / q, 0.0);
-            glVertex3f(c / q, (r + 1) / q, 0.0);
-        }
-        glEnd();
-    }
+    glBegin(GL_POLYGON);
+    glTexCoord2f(0.0, 0.0); glVertex3f(-35, -20, -50);
+    glTexCoord2f(1.0, 0.0); glVertex3f(45, -20, -50);
+    glTexCoord2f(1.0, 1.0); glVertex3f(45, -20, 40);
+    glTexCoord2f(0.0, 1.0); glVertex3f(-35, -20, 40);
+    glEnd();
     glPopMatrix();
+    glDisable(GL_TEXTURE_2D);
 
     glPushMatrix();
     glTranslated(-40.0, 50.0, -40.0);
@@ -756,7 +812,7 @@ void drawLamp()
     }
     
     glPushMatrix();
-    glTranslated(-5.5, 13, -8);
+    glTranslated(-5.25, 13, -8);
     glRotated(90, 1, 0, 0);
     gluSphere(qobj, 1.75, 50, 50);
     glPopMatrix();
@@ -839,6 +895,7 @@ void drawClockRest()
 
 void drawClocks()
 {
+    float matAmbAndDifGlass[] = { 0.9, 0.9, 0.9, 0.4 };
     glEnable(GL_TEXTURE_2D);
     glBindTexture(GL_TEXTURE_2D, texture[1]);
     glPushMatrix();
@@ -861,11 +918,19 @@ void drawClocks()
     glRotated(90, 0, 1, 0);
     gluDisk(qobj, 0.15, 1.45, 40, 4);
     glPopMatrix();
+
+    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, matAmbAndDifGlass);
+    glPushMatrix();
+    glTranslated(clockX1 + 1.5, clockY1, clockZ1);
+    glRotated(90, 0, 1, 0);
+    gluDisk(qobj, 0.0, 1.5, 40, 4);
+    glPopMatrix();
     glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, matAmbAndDifWhite);
 }
 
 void drawClocks2()
 {
+    float matAmbAndDifGlass[] = { 0.9, 0.9, 0.9, 0.4 };
     glEnable(GL_TEXTURE_2D);
     glBindTexture(GL_TEXTURE_2D, texture[1]);
     glPushMatrix();
@@ -889,7 +954,12 @@ void drawClocks2()
     gluDisk(qobj, 0.15, 1.45, 40, 4);
     glPopMatrix();
 
-
+    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, matAmbAndDifGlass);
+    glPushMatrix();
+    glTranslated(clockX2 + 1.5, clockY2, clockZ2);
+    glRotated(90, 0, 1, 0);
+    gluDisk(qobj, 0.0, 1.5, 40, 4);
+    glPopMatrix();
     glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, matAmbAndDifWhite);
 }
 
@@ -1800,6 +1870,133 @@ void drawWhiteBox()
     glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, matAmbAndDifWhite);
 }
 
+void drawWindows() {
+    float matAmbAndDifWindow[] = {0.0, 0.0, 0.9, 0.4};
+    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, matAmbAndDifWindow);
+    glPushMatrix();
+    glTranslated(-35, 17.5, -17.5);
+    glScaled(.25, 35, 15);
+    glutSolidCube(1);
+    glPopMatrix();
+
+    glPushMatrix();
+    glTranslated(-35, 17.5, 17.5);
+    glScaled(.25, 35, 15);
+    glutSolidCube(1);
+    glPopMatrix();
+    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, matAmbAndDifWhite);
+}
+
+void drawPicture()
+{
+    glEnable(GL_TEXTURE_2D);
+    glBindTexture(GL_TEXTURE_2D, texture[13]);
+    glPushMatrix();
+    glNormal3f(0.0, -1.0, 0.0);
+    glBegin(GL_POLYGON);
+    glTexCoord2f(0.0, 1.0); glVertex3f(-20, 30, -38);
+    glTexCoord2f(1.0, 1.0); glVertex3f(25, 30, -38);
+    glTexCoord2f(1.0, 0.0); glVertex3f(25, 0, -38);
+    glTexCoord2f(0.0, 0.0); glVertex3f(-20, 0, -38);
+    glEnd();
+    glPopMatrix();
+}
+
+void drawPicture2()
+{
+    glEnable(GL_TEXTURE_2D);
+    glBindTexture(GL_TEXTURE_2D, texture[14]);
+    glPushMatrix();
+    glRotated(90, 0, 1, 0);
+    glNormal3f(0.0, 0.0, 1.0);
+    glBegin(GL_POLYGON);
+    glTexCoord2f(0.0, 1.0); glVertex3f(-30, 30, 38);
+    glTexCoord2f(1.0, 1.0); glVertex3f(30, 30, 38);
+    glTexCoord2f(1.0, 0.0); glVertex3f(30, -10, 38);
+    glTexCoord2f(0.0, 0.0); glVertex3f(-30, -10, 38);
+    glEnd();
+    glPopMatrix();
+}
+
+void mainMenu(int id)
+{
+    if (id == 1) exit(0);
+
+    glutPostRedisplay();
+}
+
+void lampMenu(int id)
+{
+    if (id == 1) {
+        lamp = true;
+    }
+
+    if (id == 2) {
+        lamp = false;
+    }
+
+    glutPostRedisplay();
+}
+
+void boardMenu(int id)
+{
+    if (id == 1) sceneCounter = 1;
+
+    if (id == 2) sceneCounter = 2;
+
+    if (id == 3) sceneCounter = 3;
+
+    glutPostRedisplay();
+}
+
+void ambientMenu(int id)
+{
+    if (id == 1) globAmbVal = -0.3;
+
+    if (id == 2) globAmbVal = -0.1;
+
+    if (id == 3) globAmbVal = 0.1;
+
+    if (id == 4) globAmbVal = 0.3;
+
+    if (id == 5) globAmbVal = 0.5;
+
+    if (id == 6) globAmbVal = 0.8;
+
+    glutPostRedisplay();
+}
+
+void drawMenu()
+{
+    int lamp;
+    lamp = glutCreateMenu(lampMenu);
+    glutAddMenuEntry("On", 1);
+    glutAddMenuEntry("Off", 2);
+
+    int board;
+    board = glutCreateMenu(boardMenu);
+    glutAddMenuEntry("Wood", 1);
+    glutAddMenuEntry("Fancy", 2);
+    glutAddMenuEntry("Stone", 3);
+
+    int ambient;
+    ambient = glutCreateMenu(ambientMenu);
+    glutAddMenuEntry("Very Low", 1);
+    glutAddMenuEntry("Low", 2);
+    glutAddMenuEntry("Medium", 3);
+    glutAddMenuEntry("High", 4);
+    glutAddMenuEntry("Higher", 5);
+    glutAddMenuEntry("Very High", 6);
+
+    glutCreateMenu(mainMenu);
+    glutAddSubMenu("Lamp", lamp);
+    glutAddSubMenu("Board Style", board);
+    glutAddSubMenu("Ambient Light Level", ambient);
+    glutAddMenuEntry("Exit", 3);
+
+    glutAttachMenu(GLUT_RIGHT_BUTTON);
+}
+
 void drawItems()
 {
     drawChessboard();
@@ -1812,7 +2009,7 @@ void drawItems()
     drawCoffeeCup();
     drawNewtonsCraddle();
     drawLamp();
-    
+    drawWindows();
 
     //drawRedBox();
     //drawBlueBox();
@@ -1837,12 +2034,24 @@ void drawItems()
     drawPawnGreen1();
     drawPawnGreen2();
     drawBishopGreen1();
+
+    drawPicture();
+    drawPicture2();
     
-    NewtonAnimation(1);
-
+    //NewtonAnimation(1);
+    
     checkCollision();
-}
 
+    float spotDirection1[] = { 1.0, 0.0, 0.0 };
+    float lightPos1[] = { -100, 15, -5, 1.0 };
+    glLightfv(GL_LIGHT1, GL_SPOT_DIRECTION, spotDirection1);
+    glLightfv(GL_LIGHT1, GL_POSITION, lightPos1);
+
+    float spotDirection2[] = { 0.3, -0.5, 0.5 };
+    float lightPos2[] = { spotlightX, spotlightY, spotlightZ, 1.0 };
+    glLightfv(GL_LIGHT2, GL_SPOT_DIRECTION, spotDirection2);
+    glLightfv(GL_LIGHT2, GL_POSITION, lightPos2);
+}
 
 
 //Drawing to Screen Function
@@ -1858,6 +2067,53 @@ void drawScene()
     glLightModelfv(GL_LIGHT_MODEL_AMBIENT, globAmb); 
     glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, matSpec);
     glMaterialfv(GL_FRONT_AND_BACK, GL_SHININESS, matShine);
+
+    //Light0 - Main ambiant light
+    float lightAmb0[] = { 0.0, 0.0, 0.0, 1.0 };
+    float lightDifAndSpec0[] = { 1.0, 1.0, 1.0, 1.0 };
+    float lightPos0[] = { -45.0, 5, ambZ, 1.0 };
+    glLightfv(GL_LIGHT0, GL_AMBIENT, lightAmb0);
+    glLightfv(GL_LIGHT0, GL_DIFFUSE, lightDifAndSpec0);
+    glLightfv(GL_LIGHT0, GL_SPECULAR, lightDifAndSpec0);
+    glLightfv(GL_LIGHT0, GL_POSITION, lightPos0);
+    glEnable(GL_LIGHT0);
+
+    //Light1 - Sun
+    float spotAngle1 = 35;
+    float spotExponent1 = 15.0;
+    float lightAmb1[] = { 0.9, 0.9, 0.9, 1.0 };
+    float lightDifAndSpec1[] = { 1.0, 1.0, 1.0, 1.0 };
+    glLightfv(GL_LIGHT1, GL_AMBIENT, lightAmb1);
+    glLightfv(GL_LIGHT1, GL_DIFFUSE, lightDifAndSpec1);
+    glLightfv(GL_LIGHT1, GL_SPECULAR, lightDifAndSpec1);
+    glLightf(GL_LIGHT1, GL_SPOT_CUTOFF, spotAngle1);
+    glLightf(GL_LIGHT1, GL_SPOT_EXPONENT, spotExponent1);
+
+    //Light2 - Spotlight
+    float spotAngle2 = 25;
+    float spotExponent2 = 5.0;
+    float lightAmb2[] = { 0.9, 0.9, 0.9, 1.0 };
+    float lightDifAndSpec2[] = { 1.0, 1.0, 1.0, 1.0 };
+    glLightfv(GL_LIGHT2, GL_AMBIENT, lightAmb2);
+    glLightfv(GL_LIGHT2, GL_DIFFUSE, lightDifAndSpec2);
+    glLightfv(GL_LIGHT2, GL_SPECULAR, lightDifAndSpec2);
+    glLightf(GL_LIGHT2, GL_SPOT_CUTOFF, spotAngle2);
+    glLightf(GL_LIGHT2, GL_SPOT_EXPONENT, spotExponent2);
+
+    if (lamp) {
+        glEnable(GL_LIGHT2);
+    }
+    else {
+        glDisable(GL_LIGHT2);
+    }
+    
+    //Set background color
+    if (sun) {
+        glClearColor(0.5215686274509804, 0.6980392156862745, 0.8980392156862745, 0.0);
+    }
+    else {
+        glClearColor(0.07450980392156862745098039215686, 0.07843137254901960784313725490196, 0.07450980392156862745098039215686, 0.0);
+    }
 
     //View
     if (play) {
@@ -1900,8 +2156,6 @@ void drawScene()
 //Setup Screen Function
 void setup(void)
 {
-    glClearColor(0.5215686274509804, 0.6980392156862745, 0.8980392156862745, 0.0);
-    
     //Create texture index array.
     glGenTextures(15, texture);
 
@@ -1911,6 +2165,7 @@ void setup(void)
     //Specify how texture values combine with current surface color values.
     glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 
+    //Enable depth test
     glEnable(GL_DEPTH_TEST);
 
     //Enable Quadrics
@@ -1923,52 +2178,21 @@ void setup(void)
     glMap2f(GL_MAP2_VERTEX_3, 0, 1, 3, 4, 0, 1, 12, 6, controlPoints[0][0]);
     glEnable(GL_MAP2_VERTEX_3);
 
-    //Master lighting
+    //Enable blending
+    glEnable(GL_BLEND);
+
+    //Blending properties
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    //Enable lighting
     glEnable(GL_LIGHTING);
+
+    //Enable normalization
     glEnable(GL_NORMALIZE);
+
+    //Lighting properties
     glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, GL_TRUE);
     glLightModeli(GL_LIGHT_MODEL_LOCAL_VIEWER, GL_TRUE);
-
-    //Light0 - Main ambiant light
-    float lightAmb0[] = { 0.0, 0.0, 0.0, 1.0 };
-    float lightDifAndSpec0[] = { 1.0, 1.0, 1.0, 1.0 };
-    float lightPos0[] = { -45.0, 5, -20.0, 1.0 };
-    glLightfv(GL_LIGHT0, GL_AMBIENT, lightAmb0);
-    glLightfv(GL_LIGHT0, GL_DIFFUSE, lightDifAndSpec0);
-    glLightfv(GL_LIGHT0, GL_SPECULAR, lightDifAndSpec0);
-    glLightfv(GL_LIGHT0, GL_POSITION, lightPos0);
-    glEnable(GL_LIGHT0);
-
-    //Light1 - Sun
-    float spotAngle1 = 35;
-    float spotExponent1 = 3.0;
-    float lightAmb1[] = { 0.0, 0.0, 0.0, 1.0 };
-    float lightDifAndSpec1[] = { 1.0, 1.0, 1.0, 1.0 };
-    float lightPos1[] = { -45, 5, -20.0, 1.0 };
-    float spotDirection1[] = { -1.0, 0.0, 0.0 };
-    glLightfv(GL_LIGHT1, GL_AMBIENT, lightAmb1);
-    glLightfv(GL_LIGHT1, GL_DIFFUSE, lightDifAndSpec1);
-    glLightfv(GL_LIGHT1, GL_SPECULAR, lightDifAndSpec1);
-    glLightf(GL_LIGHT1, GL_SPOT_CUTOFF, spotAngle1);
-    glLightf(GL_LIGHT1, GL_SPOT_EXPONENT, spotExponent1);
-    glLightfv(GL_LIGHT1, GL_POSITION, lightPos1);
-    glLightfv(GL_LIGHT1, GL_SPOT_DIRECTION, spotDirection1);
-
-    //Light2 - Spotlight
-    float spotAngle2 = 25;
-    float spotExponent2 = 5.0;
-    float lightAmb2[] = { 0.9, 0.9, 0.9, 1.0 };
-    float lightDifAndSpec2[] = { 1.0, 1.0, 1.0, 1.0 };
-    float lightPos2[] = { 15, 5, -20.0, 1.0 };
-    float spotDirection2[] = { 0.0, -1.0, 0.0 };
-    glLightfv(GL_LIGHT2, GL_AMBIENT, lightAmb2);
-    glLightfv(GL_LIGHT2, GL_DIFFUSE, lightDifAndSpec2);
-    glLightfv(GL_LIGHT2, GL_SPECULAR, lightDifAndSpec2);
-    glLightf(GL_LIGHT2, GL_SPOT_CUTOFF, spotAngle2);
-    glLightf(GL_LIGHT2, GL_SPOT_EXPONENT, spotExponent2);
-    glLightfv(GL_LIGHT2, GL_POSITION, lightPos2);
-    glLightfv(GL_LIGHT2, GL_SPOT_DIRECTION, spotDirection2);
-    glEnable(GL_LIGHT2);
 }
 
 //Resize Screen Function
@@ -2021,11 +2245,6 @@ void keyInput(unsigned char key, int x, int y)
         }
         break;
 
-    case 't':
-        turnCounter++;
-        cout << "Turn Number: " << turnCounter << endl;
-        break;
-
     case 'n':
         newtonAnimate = !newtonAnimate;
         cout << "Newtons Craddle Switched" << endl;
@@ -2043,6 +2262,16 @@ void keyInput(unsigned char key, int x, int y)
 
     case 'l':
         lamp = !lamp;
+        break;
+
+    case '2':
+        ambZ++;
+        cout << "Global ambient value: " << ambZ << endl;
+        break;
+
+    case '3':
+        ambZ--;
+        cout << "Global ambient value: " << ambZ << endl;
         break;
 
     default:
@@ -2250,6 +2479,7 @@ int main(int argc, char** argv)
     glutInitWindowPosition(100, 100);
     glutCreateWindow("Chess Game");
     setup();
+    drawMenu();
     glutKeyboardFunc(keyInput);
     glutSpecialFunc(keyInputSpecial);
     glutDisplayFunc(drawScene);
