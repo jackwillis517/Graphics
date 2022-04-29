@@ -20,7 +20,25 @@
 * colourbox.dk
 * pinterest.com
 * wallpapermaiden.com
+* Texture 15 - https://duckduckgo.com/?q=seamless+geode+texture+orange&t=brave&iar=images&iax=images&ia=images&iai=http%3A%2F%2Ffarm5.staticflickr.com%2F4025%2F4635756421_484b4466d4_o.jpg
+* Texture 16 - https://duckduckgo.com/?q=seemless+sky+texture&t=brave&iax=images&ia=images&iai=https%3A%2F%2Forig00.deviantart.net%2Faecb%2Ff%2F2009%2F190%2F7%2Fb%2Ftexture_sky_by_xrainbowscribblex.png
+* Texture 17 - https://duckduckgo.com/?q=seamless+night+sky&t=brave&iax=images&ia=images&iai=https%3A%2F%2Fi.pinimg.com%2Foriginals%2F85%2F80%2Ff1%2F8580f143ca7989710a02c27f262e71a0.jpg
 * Interactions:
+    Press Left Arrow to rotate left
+    Press Right Arrow to rotate right
+    Press Up Arrow to move forward
+    Press Down Arrow to move backward
+    Press 2 to increase sun position
+    Press 3 to decrease sun position
+    Toggle p to play/stop playing chess
+    Toggle t to change player turn
+    Toggle s to change time of day
+    Toggle l to turn on/off the lamp
+    Toggle n to start/stop the Newton Craddle
+    To move a chess piece click and drag
+    To switch on/off the lamp click the white switch
+    Right click to access the menu
+    Turn: 1
 *******************************************/
 #define _CRT_SECURE_NO_DEPRECATE
 
@@ -42,9 +60,9 @@ using namespace std;
 static int PI = 3.14159265358979324;
 static bool play = false;
 static GLUquadricObj* qobj;
-static unsigned int texture[15];
+static unsigned int texture[18];
 static int sceneCounter = 1;
-static int turnCounter = 1;
+static int turnCounter;
 static int clockX1 = -4.85;
 static int clockY1 = 3.5;
 static int clockZ1 = 3;
@@ -64,6 +82,7 @@ static int ROOKGREEN2 = 8;
 static int PAWNGREEN1 = 9;
 static int PAWNGREEN2 = 10;
 static int BISHOPGREEN1 = 11;
+static int SWITCH = 12;
 static int itemID = 0;
 static int xMouse, yMouse;
 static int height, width;
@@ -82,6 +101,16 @@ float spotlightZ = -8.0;
 //Animation globals
 static int act = 1; 
 static bool newtonAnimate = false;
+static int lampSwitchRot = 45;
+static int switchCounter = 0;
+static float clockHandRot1 = 0;
+static float clockHandRot2 = 0;
+static bool startNewton = false;
+static bool hasStarted = false;
+static bool switchLampOn = false;
+static bool switchLampOff = true;
+static bool startSwitchOn = false;
+static bool startSwitchOff = false;
 
 //First person movement globals
 static float fpX = 0.0;
@@ -164,7 +193,6 @@ double ywhite = 0;
 double zwhite = 10;
 
 //Newtons Craddle
-
 static float ballX1 = 6.0;
 static float ballY1 = 3.0;
 static float ballZ1 = -10.0;
@@ -231,7 +259,18 @@ static float controlPoints[6][4][3] =
     {{-3, 12.5, -5}, {-0.25, 12.5, -5}, {0.25, 12.5, -5}, {3, 12.5, -5}},
 };
 
+static float controlPoints2[6][4][3] =
+{
+    {{-3, 12.5, 5}, {-0.25, 12.5, 5}, {0.25, 12.5, 5}, {3, 12.5, 5}},
+    {{-3.0, 0.0, 3.0}, {-0.25, 0.0, 3.0}, {0.25, 0.0, 3.0}, {3.0, 0.0, 3.0}},
+    {{-3.0, 0.0, 1.0}, {-0.25, 0.0, 1.0}, {0.25, 0.0, 1.0}, {3.0, 0.0, 1.0}},
+    {{-3.0, 0.0, -1.0}, {-0.25, 0.0, -1.0}, {0.25, 0.0, -1.0}, {3.0, 0.0, -1.0}},
+    {{-3.0, 0.0, -3.0}, {-0.25, 0.0, -3.0}, {0.25, 0.0, -3.0}, {3.0, 0.0, -3.0}},
+    {{-3, 12.5, -5}, {-0.25, 5.5, -5}, {0.25, 12.5, -5}, {3, 12.5, -5}},
+};
+
 //---------------------------------------------Utility Functions------------------------------------------------//
+
 //Projection for entire project
 void setProjection()
 {
@@ -241,7 +280,7 @@ void setProjection()
         glOrtho(-15.0, 15.0, -15.0, 15.0, 1, 100);
     }
     else {
-        gluPerspective(120, 1, 1, 100);
+        gluPerspective(120, 1, 1, 200);
     }
     glMatrixMode(GL_MODELVIEW);
 }
@@ -254,48 +293,54 @@ void getID(int x, int y)
 
     if ((int)pixel[0] == 0 && (int)pixel[1] == 200 && (int)pixel[2] == 0) {
         itemID = PAWNPINK1;
-        cout << "Pawn Pink 1 selected." << endl;
-        cout << selecting << endl;
     }
     else if ((int)pixel[0] == 0 && (int)pixel[1] == 201 && (int)pixel[2] == 0) {
         itemID = ROOKPINK1;
-        cout << "Rook Pink 1 selected." << endl;
     }
     else if ((int)pixel[0] == 0 && (int)pixel[1] == 202 && (int)pixel[2] == 0) {
         itemID = KINGPINK;
-        cout << "King Pink selected." << endl;
     }
     else if ((int)pixel[0] == 0 && (int)pixel[1] == 203 && (int)pixel[2] == 0) {
         itemID = QUEENPINK;
-        cout << "Queen Pink selected." << endl;
     }
     else if ((int)pixel[0] == 0 && (int)pixel[1] == 204 && (int)pixel[2] == 0) {
         itemID = PAWNPINK2;
-        cout << "Pawn Pink 2 selected." << endl;
     }
     else if ((int)pixel[0] == 0 && (int)pixel[1] == 205 && (int)pixel[2] == 0) {
         itemID = KINGGREEN;
-        cout << "King Green selected." << endl;
     }
     else if ((int)pixel[0] == 0 && (int)pixel[1] == 206 && (int)pixel[2] == 0) {
         itemID = ROOKGREEN1;
-        cout << "Rook Green 1 selected." << endl;
     }
     else if ((int)pixel[0] == 0 && (int)pixel[1] == 207 && (int)pixel[2] == 0) {
         itemID = ROOKGREEN2;
-        cout << "Rook Green 2 selected." << endl;
     }
     else if ((int)pixel[0] == 0 && (int)pixel[1] == 208 && (int)pixel[2] == 0) {
         itemID = PAWNGREEN1;
-        cout << "Pawn Green 1 selected." << endl;
     }
     else if ((int)pixel[0] == 0 && (int)pixel[1] == 209 && (int)pixel[2] == 0) {
         itemID = PAWNGREEN2;
-        cout << "Pawn Green 2 selected." << endl;
     }
     else if ((int)pixel[0] == 0 && (int)pixel[1] == 210 && (int)pixel[2] == 0) {
         itemID = BISHOPGREEN1;
-        cout << "Bishop Green 1 selected." << endl;
+    }
+    else if ((int)pixel[0] == 100 && (int)pixel[1] == 200 && (int)pixel[2] == 0) {
+        itemID = SWITCH;
+        if (switchCounter % 2 == 1) {
+            lamp = true;
+            startSwitchOn = true;
+            startSwitchOff = false;
+            switchLampOn = true;
+            switchLampOff = false;
+        }
+        else {
+            lamp = false;
+            startSwitchOff = true;
+            startSwitchOn = false;
+            switchLampOn = false;
+            switchLampOff = true;
+        }
+        switchCounter++;
     }
     else itemID = 0;
 
@@ -312,7 +357,9 @@ void writeStrokeString(void* font, char* string)
 
 //Collision function for checking for animation collisions
 void checkCollision() {
-    
+    if (turnCounter % 2 != 0) {
+
+    }
     glutPostRedisplay();
 }
 
@@ -369,7 +416,7 @@ BitMapFile* getBMPData(string filename)
 void loadExternalTextures()
 {
     //Local storage for bmp image data.
-    BitMapFile* image[15];
+    BitMapFile* image[18];
 
     //Textures.
     image[0] = getBMPData("Textures/cherrywood.bmp");
@@ -387,6 +434,9 @@ void loadExternalTextures()
     image[12] = getBMPData("Textures/lightwalnut.bmp");
     image[13] = getBMPData("Textures/beach.bmp");
     image[14] = getBMPData("Textures/galaxy.bmp");
+    image[15] = getBMPData("Textures/geode.bmp");
+    image[16] = getBMPData("Textures/sky.bmp");
+    image[17] = getBMPData("Textures/night.bmp");
 
     //Cherrywood image to texture index[0].
     glBindTexture(GL_TEXTURE_2D, texture[0]);
@@ -522,61 +572,149 @@ void loadExternalTextures()
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, image[14]->sizeX, image[14]->sizeY, 0,
         GL_RGB, GL_UNSIGNED_BYTE, image[14]->data);
+
+    //Geode image to texture index[15].
+    glBindTexture(GL_TEXTURE_2D, texture[15]);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, image[15]->sizeX, image[15]->sizeY, 0,
+        GL_RGB, GL_UNSIGNED_BYTE, image[15]->data);
+
+    //Sky image to texture index[16].
+    glBindTexture(GL_TEXTURE_2D, texture[16]);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, image[16]->sizeX, image[16]->sizeY, 0,
+        GL_RGB, GL_UNSIGNED_BYTE, image[16]->data);
+
+    //Night image to texture index[17].
+    glBindTexture(GL_TEXTURE_2D, texture[17]);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, image[17]->sizeX, image[17]->sizeY, 0,
+        GL_RGB, GL_UNSIGNED_BYTE, image[17]->data);
 }
+
 //--------------------------------------------------------------------------------------------------------------//
 
 
 
 //---------------------------------------------Animations-------------------------------------------------------//
-void animateNewton() //acts here
-{
-    if (act == 1) {
-        if (ballX1 > 0) {
-            ballX1 -= .0005;
-            ballY1 += .0001;
-        }
-        else {
-            act = 2;
-        }
-    }
-
-    if (act == 2) {
-        if (ballX1 < 6) {
-            ballX1 += .0005;
-            ballY1 -= .0001;
-        }
-        else {
-            act = 3;
-        }
-    }
-
-    if (act == 3) {
-        if (ballX5 < 20) {
-            ballX5 += .0005;
-            ballY5 += .0001;
-        }
-        else {
-            act = 4;
-        }
-    }
-
-    if (act == 4) {
-        if (ballX5 > 14) {
-            ballX5 -= .0005;
-            ballY5 -= .0001;
-        }
-        else {
-            act = 1;
-        }
-    }
-    
-}
 
 void NewtonAnimation(int x)
 {
-    if (newtonAnimate) animateNewton();
+    if (newtonAnimate) {
+        if (act == 1) {
+            if (ballX1 > 0) {
+                ballX1 -= .0005;
+                ballY1 += .0001;
+            }
+            else {
+                act = 2;
+            }
+        }
+
+        if (act == 2) {
+            if (ballX1 < 6) {
+                ballX1 += .0005;
+                ballY1 -= .0001;
+            }
+            else {
+                act = 3;
+            }
+        }
+
+        if (act == 3) {
+            if (ballX5 < 20) {
+                ballX5 += .0005;
+                ballY5 += .0001;
+            }
+            else {
+                act = 4;
+            }
+        }
+
+        if (act == 4) {
+            if (ballX5 > 14) {
+                ballX5 -= .0005;
+                ballY5 -= .0001;
+            }
+            else {
+                act = 1;
+            }
+        }
+    }
     glutTimerFunc(100, NewtonAnimation, 1);
+    glutPostRedisplay();
 }
+
+void switchLampOnAnimation(int x)
+{
+    if (switchLampOn || lamp) {
+        if (lampSwitchRot > -45) {
+            lampSwitchRot -= 1;
+        }
+    }
+    startSwitchOn = false;
+    glutTimerFunc(100, switchLampOnAnimation, 1);
+    glutPostRedisplay();
+}
+
+void switchLampOnAnimation2(int x)
+{
+    if (switchLampOff) {
+        if (lampSwitchRot < 45) {
+            lampSwitchRot += 10;
+        }
+    }
+    startSwitchOff = false;
+    glutTimerFunc(100, switchLampOnAnimation2, 1);
+    glutPostRedisplay();
+}
+
+void clock1Start()
+{
+    if (clockHandRot1 == 360) {
+        clockHandRot1 = 0;
+    }
+    if (clockHandRot1 < 360) {
+        clockHandRot1 += 0.1;
+    }
+    glutPostRedisplay();
+}
+
+void clock2Start()
+{
+   if (clockHandRot2 == 360) {
+       clockHandRot2 = 0;
+    }
+
+   if (clockHandRot2 < 360) {
+       clockHandRot2 += 0.1;
+   }
+   glutPostRedisplay();
+}
+
+void clockAnimation1()
+{
+    if (turnCounter % 2 != 0 && hasStarted) {
+        glutIdleFunc(clock1Start);
+    }
+}
+
+void clockAnimation2()
+{
+    if (turnCounter % 2 == 0 && hasStarted) {
+       glutIdleFunc(clock2Start);
+    }
+}
+
 //-------------------------------------------------------------------------------------------------------------//
 
 
@@ -616,6 +754,27 @@ void drawGround()
     glutSolidCube(1);
     glPopMatrix();
     glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, matAmbAndDifWhite);
+}
+
+void drawSky()
+{
+    glEnable(GL_TEXTURE_GEN_S);
+    glEnable(GL_TEXTURE_GEN_T);
+    glEnable(GL_TEXTURE_2D);
+    if (sun) {
+        glBindTexture(GL_TEXTURE_2D, texture[16]);
+        globAmbVal = 0.2;
+    }
+    else {
+        glBindTexture(GL_TEXTURE_2D, texture[17]);
+        globAmbVal = -0.3;
+    }
+    glPushMatrix();
+    glutSolidSphere(200, 30, 30);
+    glPopMatrix();
+    glDisable(GL_TEXTURE_GEN_S);
+    glDisable(GL_TEXTURE_GEN_T);
+    glDisable(GL_TEXTURE_2D);
 }
 
 void drawWalls()
@@ -805,7 +964,11 @@ void drawLamp()
     glPopMatrix();
 
     if (lamp) {
+        float lampEmiss[] = { 0.9, 0.9, 0.0, 1.0 };
+        glMaterialfv(GL_FRONT_AND_BACK, GL_EMISSION, lampEmiss);
         glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, matAmbAndDifYellow);
+        glMaterialfv(GL_FRONT_AND_BACK, GL_SHININESS, matShine);
+        glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, matSpec);
     }
     else {
         glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, matAmbAndDifWhite);
@@ -817,6 +980,17 @@ void drawLamp()
     gluSphere(qobj, 1.75, 50, 50);
     glPopMatrix();
     glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, matAmbAndDifWhite);
+    glMaterialfv(GL_FRONT_AND_BACK, GL_EMISSION, noEmiss);
+
+    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, matAmbAndDifWhite);
+    glColor3ub(100, 200, 0);
+    glPushMatrix();
+    glTranslated(-5.5, 1.3, -8.0);
+    glRotated(45, 0, 1, 0);
+    glRotated(lampSwitchRot, 0, 0, 1);
+    glScaled(0.15, 0.7, 0.5);
+    glutSolidCube(1);
+    glPopMatrix();
 }
 
 void drawClockRest()
@@ -854,14 +1028,13 @@ void drawClockRest()
     glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, matAmbAndDifWhite);
     
     glEnable(GL_TEXTURE_2D);
-    glBindTexture(GL_TEXTURE_2D, texture[5]);
+    glBindTexture(GL_TEXTURE_2D, texture[15]);
     glPushMatrix();
     glTranslated(-4.0, 3, 6.5);
     glRotated(90, 1, 0, 0);
     gluSphere(qobj, 1.5, 50, 50);
     glPopMatrix();
 
-    glBindTexture(GL_TEXTURE_2D, texture[5]);
     glPushMatrix();
     glTranslated(-6.0, 2.0, 0.8);
     glRotated(90, 1, 0, 0);
@@ -919,6 +1092,16 @@ void drawClocks()
     gluDisk(qobj, 0.15, 1.45, 40, 4);
     glPopMatrix();
 
+    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, matAmbAndDifBlack);
+    glPushMatrix();
+    glTranslated(clockX1 + 1.1, clockY1, clockZ1 + .05);
+    glRotated(clockHandRot1, 1, 0, 0);
+    glTranslated(0, .65, 0);
+    glScaled(.15, 1.3, .10);
+    glutSolidCube(1);
+    glPopMatrix();
+    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, matAmbAndDifWhite);
+
     glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, matAmbAndDifGlass);
     glPushMatrix();
     glTranslated(clockX1 + 1.5, clockY1, clockZ1);
@@ -953,6 +1136,16 @@ void drawClocks2()
     glRotated(90, 0, 1, 0);
     gluDisk(qobj, 0.15, 1.45, 40, 4);
     glPopMatrix();
+
+    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, matAmbAndDifBlack);
+    glPushMatrix();
+    glTranslated(clockX2 + 1.1, clockY2, clockZ2 + .05);
+    glRotated(clockHandRot2, 1, 0, 0);
+    glTranslated(0, .65, 0);
+    glScaled(.15, 1.3, .10);
+    glutSolidCube(1);
+    glPopMatrix();
+    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, matAmbAndDifWhite);
 
     glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, matAmbAndDifGlass);
     glPushMatrix();
@@ -1019,8 +1212,8 @@ void drawCoffeeCup()
 
 void drawNewtonsCraddle()
 {
-    glEnable(GL_TEXTURE_2D);
     glBindTexture(GL_TEXTURE_2D, texture[3]);
+    glEnable(GL_TEXTURE_2D);
     glPushMatrix();
     glTranslated(4.0, 9.0, -7.75);
     glRotated(90, 1, 0, 0);
@@ -1045,16 +1238,6 @@ void drawNewtonsCraddle()
     gluCylinder(qobj, .20, .20, 9.0, 40, 5);
     glPopMatrix();
 
-    /*glPushMatrix();
-    glTranslated(16.0, 9.0, -12.5);
-    gluCylinder(qobj, .20, .20, 5.0, 40, 5);
-    glPopMatrix();
-
-    glPushMatrix();
-    glTranslated(4.0, 9.0, -12.5);
-    gluCylinder(qobj, .20, .20, 5.0, 40, 5);
-    glPopMatrix();*/
-
     glPushMatrix();
     glTranslated(3.8, 9.0, -12.25);
     glRotated(90, 0, 1, 0);
@@ -1068,6 +1251,8 @@ void drawNewtonsCraddle()
     glPopMatrix();
 
     glBindTexture(GL_TEXTURE_2D, texture[7]);
+    glEnable(GL_TEXTURE_GEN_S);
+    glEnable(GL_TEXTURE_GEN_T);
     glPushMatrix();
     glTranslated(ballX1, ballY1, ballZ1);
     glRotated(90, 1, 0, 0);
@@ -1097,6 +1282,8 @@ void drawNewtonsCraddle()
     glRotated(90, 1, 0, 0);
     gluSphere(qobj, 1.0, 50, 50);
     glPopMatrix();
+    glDisable(GL_TEXTURE_GEN_S);
+    glDisable(GL_TEXTURE_GEN_T);
     glDisable(GL_TEXTURE_2D);
 
     glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, matAmbAndDifBlack);
@@ -1248,7 +1435,7 @@ void drawChessboard()
 
 void drawPawnPink1()
 {
-    //glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, matAmbAndDifPurple);
+    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, matAmbAndDifWhite);
     glColor3ub(0, 200, 0);
     if (!selecting) {
         glEnable(GL_TEXTURE_2D);
@@ -1949,19 +2136,11 @@ void boardMenu(int id)
     glutPostRedisplay();
 }
 
-void ambientMenu(int id)
+void skyMenu(int id)
 {
-    if (id == 1) globAmbVal = -0.3;
+    if (id == 1) sun = true;
 
-    if (id == 2) globAmbVal = -0.1;
-
-    if (id == 3) globAmbVal = 0.1;
-
-    if (id == 4) globAmbVal = 0.3;
-
-    if (id == 5) globAmbVal = 0.5;
-
-    if (id == 6) globAmbVal = 0.8;
+    if (id == 2) sun = false;
 
     glutPostRedisplay();
 }
@@ -1979,19 +2158,15 @@ void drawMenu()
     glutAddMenuEntry("Fancy", 2);
     glutAddMenuEntry("Stone", 3);
 
-    int ambient;
-    ambient = glutCreateMenu(ambientMenu);
-    glutAddMenuEntry("Very Low", 1);
-    glutAddMenuEntry("Low", 2);
-    glutAddMenuEntry("Medium", 3);
-    glutAddMenuEntry("High", 4);
-    glutAddMenuEntry("Higher", 5);
-    glutAddMenuEntry("Very High", 6);
+    int sky;
+    sky = glutCreateMenu(skyMenu);
+    glutAddMenuEntry("Day", 1);
+    glutAddMenuEntry("Night", 2);
 
     glutCreateMenu(mainMenu);
     glutAddSubMenu("Lamp", lamp);
     glutAddSubMenu("Board Style", board);
-    glutAddSubMenu("Ambient Light Level", ambient);
+    glutAddSubMenu("Time", sky);
     glutAddMenuEntry("Exit", 3);
 
     glutAttachMenu(GLUT_RIGHT_BUTTON);
@@ -2010,7 +2185,6 @@ void drawItems()
     drawNewtonsCraddle();
     drawLamp();
     drawWindows();
-
     //drawRedBox();
     //drawBlueBox();
     //drawGreenBox();
@@ -2022,7 +2196,6 @@ void drawItems()
     //drawBrownBox();
     //drawWhiteBox();
     //drawDarkGreyBox();
-
     drawRookPink1();
     drawPawnPink2();
     drawPawnPink1();
@@ -2034,12 +2207,24 @@ void drawItems()
     drawPawnGreen1();
     drawPawnGreen2();
     drawBishopGreen1();
-
     drawPicture();
     drawPicture2();
     
-    //NewtonAnimation(1);
+    if (startNewton) {
+        NewtonAnimation(1);
+    }
     
+    if (startSwitchOn || lamp) {
+        switchLampOnAnimation(1);
+    }
+
+    if (startSwitchOff) {
+        switchLampOnAnimation2(1);
+    }
+    
+    clockAnimation1();
+    clockAnimation2();
+
     checkCollision();
 
     float spotDirection1[] = { 1.0, 0.0, 0.0 };
@@ -2088,6 +2273,12 @@ void drawScene()
     glLightfv(GL_LIGHT1, GL_SPECULAR, lightDifAndSpec1);
     glLightf(GL_LIGHT1, GL_SPOT_CUTOFF, spotAngle1);
     glLightf(GL_LIGHT1, GL_SPOT_EXPONENT, spotExponent1);
+    if (sun) {
+        glEnable(GL_LIGHT1);
+    }
+    else {
+        glDisable(GL_LIGHT1);
+    }
 
     //Light2 - Spotlight
     float spotAngle2 = 25;
@@ -2099,7 +2290,6 @@ void drawScene()
     glLightfv(GL_LIGHT2, GL_SPECULAR, lightDifAndSpec2);
     glLightf(GL_LIGHT2, GL_SPOT_CUTOFF, spotAngle2);
     glLightf(GL_LIGHT2, GL_SPOT_EXPONENT, spotExponent2);
-
     if (lamp) {
         glEnable(GL_LIGHT2);
     }
@@ -2115,18 +2305,13 @@ void drawScene()
         glClearColor(0.07450980392156862745098039215686, 0.07843137254901960784313725490196, 0.07450980392156862745098039215686, 0.0);
     }
 
+    drawSky();
+
     //View
     if (play) {
-        if (turnCounter % 2 != 0) {
-            gluLookAt(fpX2, fpY2 + 7, fpZ2,
-                fpX2 + sin(188.0 * PI / 180), fpY2 + 6, fpZ2 + cos(188.0 * PI / 180),
-                0, 1, 0);
-        }
-        else {
-            gluLookAt(fpX2, fpY2 + 17, fpZ2 - 50,
-                fpX2 + sin(188.0 * PI / 180), fpY2 - 15, fpZ2 + cos(188.0 * PI / 180),
-                0, 1, 0);
-        }
+        gluLookAt(fpX2, fpY2 + 7, fpZ2,
+            fpX2 + sin(188.0 * PI / 180), fpY2 + 6, fpZ2 + cos(188.0 * PI / 180),
+            0, 1, 0);
     }
     else {
         gluLookAt(fpX, fpY, fpZ,
@@ -2146,7 +2331,6 @@ void drawScene()
     }
 }
 
-
 //-------------------------------------------------------------------------------------------------------------//
 
 
@@ -2157,13 +2341,17 @@ void drawScene()
 void setup(void)
 {
     //Create texture index array.
-    glGenTextures(15, texture);
+    glGenTextures(18, texture);
 
     //Load external textures.
     loadExternalTextures();
 
     //Specify how texture values combine with current surface color values.
     glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+
+    //Enable Sphere Map
+    glTexGeni(GL_S, GL_TEXTURE_GEN_MODE, GL_SPHERE_MAP);
+    glTexGeni(GL_T, GL_TEXTURE_GEN_MODE, GL_SPHERE_MAP);
 
     //Enable depth test
     glEnable(GL_DEPTH_TEST);
@@ -2213,51 +2401,28 @@ void keyInput(unsigned char key, int x, int y)
         exit(0);
         break;
 
-    case '>':
-        globAmbVal += 0.1;
-        break;
-
-    case '<':
-        globAmbVal -= 0.1;
-        break;
-
-    case 'q':
-        if (canMove) {
-            fpY -= stepsize;
-        }
-        break;
-
-    case 'e':
-        if (canMove) {
-            fpY += stepsize;
-        }
-        break;
-
     case 'p':
         play = !play;
         canMove = !canMove;
-        break;
-
-    case '1':
-        if (turnCounter < 3) {
-            sceneCounter++;
-            cout << "Turn counter: " << turnCounter << endl;
+        if (!hasStarted) {
+            turnCounter = 1;
+            hasStarted = true;
         }
         break;
 
     case 'n':
+        startNewton = !startNewton;
         newtonAnimate = !newtonAnimate;
-        cout << "Newtons Craddle Switched" << endl;
+        break;
+
+    case 't':
+        turnCounter = turnCounter++;
+        cout << "Turn: " << turnCounter << endl;
         break;
 
     case 's':
         sun = !sun;
-        if (sun) {
-            glEnable(GL_LIGHT1);
-        }
-        else {
-            glDisable(GL_LIGHT1);
-        }
+        
         break;
 
     case 'l':
@@ -2266,12 +2431,10 @@ void keyInput(unsigned char key, int x, int y)
 
     case '2':
         ambZ++;
-        cout << "Global ambient value: " << ambZ << endl;
         break;
 
     case '3':
         ambZ--;
-        cout << "Global ambient value: " << ambZ << endl;
         break;
 
     default:
@@ -2321,7 +2484,7 @@ void mouseInput(int button, int state, int x, int y)
 {
     if (button == GLUT_LEFT && state == GLUT_DOWN) //mouse clicked
     {
-        std::cout << "left button pressed" << std::endl;
+        
         selecting = true;
         xMouse = x;
         yMouse = height - y;
@@ -2336,9 +2499,6 @@ void mouseInput(int button, int state, int x, int y)
         //window coordinates
         double xW = fpX2 + -15 + a;
         double zW = fpZ2 + b;
-
-        cout << "xW=" << xW << ' ' << "zW=" << zW << endl;
-        cout << "xred=" << xred << ' ' << "zred=" << zred << endl;
         
         if (xW <= xred + 1 && xW >= xred - 1 && zW <= zred + 2.5 && zW >= zred - 2.5
             || xW <= xblue + 1 && xW >= xblue - 1 && zW <= zblue + 2.5 && zW >= zblue - 2.5
@@ -2353,7 +2513,6 @@ void mouseInput(int button, int state, int x, int y)
             || xW <= xwhite + 1 && xW >= xwhite - 1 && zW <= zwhite + 2.5 && zW >= zwhite - 2.5)
         {
             dragging = true;
-            std::cout << "dragging" << std::endl;
         }
         else {
             dragging = false;
@@ -2375,13 +2534,12 @@ void mouseMotion(int x, int y)
     {
         //conversion factors
         double fw = 30.0 / width;
-        double fh = -30.0 / height;  //note - since in z neg above pos
+        double fh = -30.0 / height;
 
         double a = x * fw;
         double b = (height - y) * fh;
         double xW = fpX2 + -15 + a;
-        double zW = fpZ2 + 15 + b;    //z instead of y
-        std::cout << "xW=" << xW << ' ' << "zW=" << zW << std::endl;
+        double zW = fpZ2 + 15 + b;
 
         if (itemID == PAWNPINK1) {
             xred = xW;
@@ -2468,6 +2626,24 @@ void mouseMotion(int x, int y)
 void printInteraction(void)
 {
     cout << "Interaction:" << endl;
+    cout << "Press Left Arrow to rotate left" << endl;
+    cout << "Press Right Arrow to rotate right" << endl;
+    cout << "Press Up Arrow to move forward" << endl;
+    cout << "Press Down Arrow to move backward" << endl;
+    cout << "Press 2 to increase sun position" << endl;
+    cout << "Press 3 to decrease sun position" << endl;
+    cout << "Toggle p to play/stop playing chess" << endl;
+    cout << "Toggle t to change player turn" << endl;
+    cout << "Toggle s to change time of day" << endl;
+    cout << "Toggle l to turn on/off the lamp" << endl;
+    cout << "Toggle n to start/stop the Newton Craddle" << endl;
+    cout << "To move a chess piece click and drag" << endl;
+    cout << "To switch on/off the lamp click the white switch" << endl;
+    cout << "Right click to access the menu" << endl;
+    cout << "------------------------------------------------" << endl;
+    cout << "------------------------------------------------" << endl;
+    cout << "------------------------------------------------" << endl;
+    cout << "Turn: 1" << endl;
 }
 
 //Main Loop
@@ -2475,7 +2651,7 @@ int main(int argc, char** argv)
 {
     glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
-    glutInitWindowSize(1000, 1000);
+    glutInitWindowSize(800, 800);
     glutInitWindowPosition(100, 100);
     glutCreateWindow("Chess Game");
     setup();
@@ -2491,5 +2667,6 @@ int main(int argc, char** argv)
 
     return 0;
 }
+
 //-------------------------------------------------------------------------------------------------------------//
 
